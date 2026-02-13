@@ -1,0 +1,43 @@
+package com.bernelius.abrechnung.terminal
+
+fun mapIntToHotkey(num: Int): Char {
+    when (num % 36) {
+        0 -> return 'a'
+        1 -> return 'b'
+        2 -> return 'c'
+        3 -> return 'd'
+        4 -> return 'e'
+        5 -> return 'f'
+        6 -> return 'g'
+        7 -> return 'h'
+        8 -> return 'i'
+        9 -> return 'j'
+        10 -> return 'k'
+        11 -> return 'l'
+        12 -> return 'm'
+        13 -> return 'n'
+        14 -> return 'o'
+        15 -> return 'p'
+        16 -> return 'q'
+        17 -> return 'r'
+        18 -> return 's'
+        19 -> return 't'
+        20 -> return 'u'
+        21 -> return 'v'
+        22 -> return 'w'
+        23 -> return 'x'
+        24 -> return 'y'
+        25 -> return 'z'
+        26 -> return '1'
+        27 -> return '2'
+        28 -> return '3'
+        29 -> return '4'
+        30 -> return '5'
+        31 -> return '6'
+        32 -> return '7'
+        33 -> return '8'
+        34 -> return '9'
+        35 -> return '0'
+    }
+    error("FATAL: Could not map int to hotkey")
+}

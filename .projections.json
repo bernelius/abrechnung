@@ -1,0 +1,10 @@
+{
+    "app/src/main/kotlin/*.kt": {
+        "type": "source",
+        "alternate": "app/src/test/kotlin/{}Test.kt"
+    },
+    "app/src/test/kotlin/*Test.kt": {
+        "type": "test",
+        "alternate": "app/src/main/kotlin/{}.kt"
+    }
+}

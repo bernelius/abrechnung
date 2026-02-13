@@ -1,0 +1,5 @@
+root = true
+
+[*]
+ktlint_standard_package-name = disabled
+ktlint_standard_unnecessary-parentheses-before-trailing-lambda = disabled
