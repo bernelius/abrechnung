@@ -252,5 +252,17 @@ tasks {
             include("META-INF/services/**")
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }
+        // Add JVM arguments to manifest to suppress sun.misc.Unsafe warnings at runtime
+        manifest {
+            attributes(
+                "Main-Class" to "com.bernelius.abrechnung.AppKt",
+                "Multi-Release" to "true"
+            )
+        }
     }
+}
+
+// Configure the application plugin to pass JVM args when running
+application {
+    applicationDefaultJvmArgs = listOf("--sun-misc-unsafe-memory-access=allow")
 }

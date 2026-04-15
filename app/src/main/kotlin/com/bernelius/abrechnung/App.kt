@@ -21,6 +21,7 @@ import com.bernelius.abrechnung.terminal.navigationLoop
 import com.bernelius.abrechnung.terminal.stdMenuRow
 import com.bernelius.abrechnung.utils.exitProgram
 import com.bernelius.abrechnung.utils.renderLogo
+import com.bernelius.abrechnung.utils.getProjectDir
 import com.bernelius.abrechnung.theme.Theme as th
 import com.bernelius.abrechnung.logging.configureLogging
 import com.github.ajalt.mordant.table.grid
@@ -35,6 +36,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import org.postgresql.util.PSQLException
 import org.sqlite.date.ExceptionUtils
+import java.io.FileOutputStream
+import java.io.PrintStream
 
 data class StartupData(
     val overdueState: Boolean,
@@ -68,24 +71,40 @@ var terminalConfig = ConfigManager.loadConfig().terminalConfig
 
 
 suspend fun main() {
-    configureLogging()
-    val audioPlayer = CrossfadingAudioPlayer()
     val ui = MordantUI()
+
+    /*
+    * a full day of trying to get logback to cooperate in graalVM on startup left me with no option but to brute force this stream redirection.
+    * not pretty, but it's better than getting spammed with log messages from hikari 
+    * (in stdout! what the crap... never found the root cause of this) when the app starts up.
+    * the shadowJar worked fine with the ui.withLoading() version, so it's still an option for non-graal builds.
+    * used to be ui.withLoading({ ...get all the lateinit vars... }) but now we do this instead.
+    *
+    * o beautiful spinner, thou shalt be missed.
+    *
+    * TODO: hack together a withloading version that also controls the output stream
+    */
+
     var scene = MordantScene(ui).apply {
+        addRow(
+            Text("initializing..."),
+        )
         display()
     }
-    lateinit var startupData: StartupData
-    lateinit var appScope: CoroutineScope
-    ui.withLoading(block = {
-        DatabaseFactory.init()
-        audioPlayer.start()
-        startupData = loadStartupData()
-        appScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    }, message = "initializing")
+    val originalOut = System.out
+    val originalErr = System.err
+    val logFile = FileOutputStream("${getProjectDir()}/abrechnung-stdout.log", true)
+    System.setOut(PrintStream(logFile, true, "UTF-8"))
+    // IMPORTANT! This stays redirected forever
+    configureLogging()
 
+    val audioPlayer = CrossfadingAudioPlayer()
 
-    System.err.println("we are here")
-    exitProgram()
+    DatabaseFactory.init()
+    audioPlayer.start()
+    val startupData = loadStartupData()
+    val appScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     var mainSong = if (startupData.overdueState) Songs.FINSTERNIS else Songs.ABRECHNUNG
     var credentialsConfig = startupData.credentialsConfig
 
@@ -131,6 +150,9 @@ suspend fun main() {
 
     val logo = renderLogo("Abrechnung?", fontName = th.primaryFont)
     val logoWidth = logo.split("\n")[0].length
+
+    System.setOut(originalOut)
+
     if (ui.size.width < logoWidth) {
         scene.addRow("This terminal window is too small. There will be be problems with the output.")
         scene.addRow(th.success("o) ") + "Okay. How bad could it be?")

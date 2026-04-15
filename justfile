@@ -5,10 +5,10 @@ build-native:
     ./gradlew :app:nativeCompile
 
 run:
-    java --enable-native-access=ALL-UNNAMED -jar app/build/libs/abrechnung-all.jar AppKt
+    java --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow -jar app/build/libs/abrechnung-all.jar AppKt
 
 run-local:
-    ABRECHNUNG_DB_URL="" java --enable-native-access=ALL-UNNAMED -jar app/build/libs/abrechnung-all.jar AppKt
+    ABRECHNUNG_DB_URL="" java --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow -jar app/build/libs/abrechnung-all.jar AppKt
 
 run-native:
     ./app/build/native/nativeCompile/app

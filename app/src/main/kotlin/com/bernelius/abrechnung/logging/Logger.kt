@@ -10,6 +10,7 @@ import java.io.FileOutputStream
 import java.io.PrintStream
 
 fun configureLogging() {
+    System.setErr(PrintStream(FileOutputStream("${getProjectDir()}/abrechnung-stderr.log", true), true, "UTF-8"))
     val context = LoggerFactory.getILoggerFactory() as LoggerContext
     context.reset()
 
@@ -30,7 +31,4 @@ fun configureLogging() {
     val rootLogger = context.getLogger("ROOT")
     rootLogger.level = Level.WARN
     rootLogger.addAppender(fileAppender)
-
-    // Redirect System.err to a separate log file (captures JVM warnings, native library output, etc.)
-    System.setErr(PrintStream(FileOutputStream("${getProjectDir()}/abrechnung-stderr.log", true), true, "UTF-8"))
 }
