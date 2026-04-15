@@ -137,6 +137,23 @@ tasks.named<Test>("test") {
     })
 }
 
+graalvmNative {
+    toolchainDetection.set(false)
+    binaries {
+        named("main") {
+            buildArgs.add("--enable-url-protocols=https,http")
+            buildArgs.add("--enable-native-access=ALL-UNNAMED")
+        }
+    }
+}
+
+tasks.register<Exec>("buildNativeImage") {
+    group = "build"
+    description = "Build GraalVM native image"
+    workingDir(rootProject.rootDir)
+    commandLine("${System.getProperty("user.home")}/.sdkman/candidates/java/24-graal/bin/gradlew", ":app:nativeRun", "--no-daemon")
+}
+
 tasks {
     shadowJar {
         archiveBaseName.set("abrechnung")

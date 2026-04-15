@@ -1,0 +1,27 @@
+{
+  "resources": [
+    {
+      "pattern": "db/migration/.*\\.sql"
+    },
+    {
+      "pattern": "music/.*\\.ogg"
+    },
+    {
+      "pattern": "flf/.*\\.flf"
+    },
+    {
+      "pattern": "fonts/.*\\.ttf"
+    },
+    {
+      "pattern": "META-INF/services/.*"
+    }
+  ],
+  "bundles": [
+    {
+      "name": "kotlin-time"
+    },
+    {
+      "name": "kotlin-collections"
+    }
+  ]
+}
