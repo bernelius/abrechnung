@@ -49,7 +49,8 @@
 │   ├── db/migration/                             # Database migrations
 │   ├── fonts/inter/                              # Font files
 │   ├── music/                                    # Audio files
-│   └── flf/                                      # Figlet fonts
+│   ├── flf/                                      # Figlet fonts
+│   └── META-INF/native-image/                    # GraalVM native-image config
 ├── docs/                                         # Documentation
 ├── logos/                                        # Logo designs
 ├── output/                                       # Generated invoices
@@ -267,24 +268,46 @@ The `Repository` object is a singleton that provides all data access operations:
 **Gradle Configuration:**
 - Kotlin DSL (`build.gradle.kts`)
 - Shadow JAR for fat JAR creation
-- Java 24 toolchain requirement
+- Java 24 toolchain requirement (GraalVM vendor)
 - ktlint for code formatting
-- Native compilation with GraalVM (optional)
+- Kover for code coverage
+- GraalVM Native Image support via `org.graalvm.buildtools.native` plugin
+
+**Plugins:**
+- `org.jetbrains.kotlin.jvm` 2.2.21
+- `org.jetbrains.kotlin.plugin.serialization` 2.3.20-RC2
+- `com.gradleup.shadow` 9.3.0
+- `org.jlleitschuh.gradle.ktlint` 14.0.1
+- `org.graalvm.buildtools.native` 1.0.0
+- `org.jetbrains.kotlinx.kover` 0.9.8
 
 **Key Dependencies:**
-- Kotlin 1.9+ with coroutines
+- Kotlin 2.2.21 with coroutines 1.8.0
 - Mordant 3.0.2 (Terminal UI)
 - Exposed 1.0.0 (Type-safe SQL)
 - OpenPDF 3.0.3 (PDF generation)
-- Jakarta Mail 2.1.0 (Email)
+- Jakarta Mail 2.1.0-M1 (Email)
 - HikariCP 7.0.2 (Connection pooling)
 - LWJGL 3.4.1 (Audio)
+- Flyway 12.3.0 (Database migrations)
 
 **Resource Management:**
 - Fonts: Complete Inter font family (18pt, 24pt, 28pt)
 - Music: 4 OGG Vorbis theme songs
 - Figlet: 15+ ASCII art fonts for logo rendering
 - Database migrations: Per-database-type SQL
+- GraalVM: Native image configuration in `META-INF/native-image/native-image.properties`
+
+**GraalVM Native Image Configuration:**
+Located at `app/src/main/resources/META-INF/native-image/native-image.properties`:
+```properties
+# GraalVM Native Image configuration
+Args = --no-fallback --enable-url-protocols=https,http --enable-all-security-services --enable-native-access=ALL-UNNAMED
+```
+
+Additional build arguments configured in `build.gradle.kts`:
+- `-J--sun-misc-unsafe-memory-access=allow` (suppresses LWJGL deprecation warnings)
+- Metadata repository disabled (versions >= 0.3.33 use incompatible format)
 
 ## Configuration File Structure
 
@@ -357,20 +380,39 @@ invoiceNumber = "Invoice Number"
 ## Deployment Options
 
 **JAR Distribution:**
-- Shadow JAR (`./gradlew shadowJar`)
+- Shadow JAR (`./gradlew shadowJar` or `just build`)
 - Self-contained with resources
-- Java 24+ required
+- Java 24+ with GraalVM required
 - Cross-platform (Linux, macOS, Windows)
+- Run with: `java --enable-native-access=ALL-UNNAMED -jar app/build/libs/abrechnung-all.jar`
 
 **Native Compilation:**
-- GraalVM native-image support
-- Faster startup, smaller footprint
-- Requires native toolchain setup
+- Full GraalVM native-image support via Gradle plugin
+- Build: `./gradlew nativeCompile` or `just build-native`
+- Output: `app/build/native/nativeCompile/app`
+- Run: `just run-native` or `./app/build/native/nativeCompile/app`
+- Configuration in `resources/META-INF/native-image/native-image.properties`
+- Build arguments:
+  - `--enable-url-protocols=https,http`
+  - `--enable-native-access=ALL-UNNAMED`
+  - `--no-fallback`
+  - `--enable-all-security-services`
+- GraalVM Community edition support via `setupGraalVMCommunity` task (creates symlink for native-image)
 
 **Database Options:**
 - Default: SQLite (embedded, zero-config)
 - Production: PostgreSQL (via `ABRECHNUNG_DB_URL`)
 - Migration path: Export/import utilities
+
+**Build Commands (via justfile):**
+- `just build` - Build shadow JAR
+- `just build-native` - Build GraalVM native image
+- `just run` - Run JAR version
+- `just run-native` - Run native binary
+- `just test` - Run tests
+- `just check` - Run ktlint checks
+- `just format` - Format code with ktlint
+- `just report` - Generate Kover coverage report
 
 ## Async/Await Architecture
 

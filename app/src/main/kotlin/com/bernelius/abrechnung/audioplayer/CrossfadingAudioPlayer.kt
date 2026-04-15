@@ -87,9 +87,7 @@ class CrossfadingAudioPlayer {
                     } finally {
                         destroyOpenAL()
                     }
-                } catch (e: UnsatisfiedLinkError) {
-                    System.err.println("Audio disabled: ${e.message}")
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     System.err.println("Audio disabled: ${e.message}")
                 }
             }, "AudioPlayer").apply {

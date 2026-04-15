@@ -12,7 +12,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.3.20-RC2"
     id("com.gradleup.shadow") version "9.3.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
-    id("org.graalvm.buildtools.native") version "0.11.5"
+    id("org.graalvm.buildtools.native") version "1.0.0"
     id("org.jetbrains.kotlinx.kover") version "0.9.8"
     application
 }
@@ -78,7 +78,12 @@ dependencies {
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
-java { toolchain { languageVersion = JavaLanguageVersion.of(24) } }
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(24)
+        vendor = JvmVendorSpec.GRAAL_VM
+    }
+}
 
 application {
     // Define the main class for the application.
@@ -138,20 +143,106 @@ tasks.named<Test>("test") {
 }
 
 graalvmNative {
-    toolchainDetection.set(false)
+    // Metadata repository disabled - versions >= 0.3.33 use new format incompatible with plugin 1.0.0
+    metadataRepository {
+        enabled.set(false)
+    }
     binaries {
         named("main") {
+            javaLauncher.set(javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(24))
+                vendor.set(JvmVendorSpec.GRAAL_VM)
+            })
             buildArgs.add("--enable-url-protocols=https,http")
             buildArgs.add("--enable-native-access=ALL-UNNAMED")
+            // Suppress sun.misc.Unsafe deprecation warnings from LWJGL
+            buildArgs.add("-J--sun-misc-unsafe-memory-access=allow")
+            // HikariCP and Logback need build-time initialization for GraalVM native image
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.HikariConfig")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.HikariDataSource")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.pool.HikariPool")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.pool.PoolBase")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.util.DriverDataSource")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.util.PropertyElf")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.util.UtilityElf")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.Logger")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.Level")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.LoggerContext")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.spi.LogbackServiceProvider")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.spi.TurboFilterList")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.spi.LoggerContextVO")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.AppenderAttachableImpl")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.BasicStatusManager")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.COWArrayList")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.ConsoleAppender")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.OutputStreamAppender")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.encoder.LayoutWrappingEncoder")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.pattern.PatternLayoutEncoderBase")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.PatternLayout")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.encoder.PatternLayoutEncoder")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.helpers.CyclicBuffer")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.LogbackLock")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.ContextBase")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.AppenderBase")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget\$1")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget\$2")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.OutputStreamAppender")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.UnsynchronizedAppenderBase")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.status.InfoStatus")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.status.Status")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.util.LogbackMDCAdapter")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.BasicConfigurator")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.util.ContextInitializer")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.layout.TTLLLayout")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.pattern.ThrowableProxyConverter")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.SimpleTimeBasedGuard")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.ReentryGuard")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.ReentryGuard\$ReentryGuardImpl")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.CachingDateFormatter")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.CachingDateFormatter\$CacheTuple")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.util.ContextInitializer\$1")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.ContextAwareImpl")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.FilterAttachableImpl")
         }
     }
 }
 
-tasks.register<Exec>("buildNativeImage") {
+// GraalVM Community has native-image in lib/svm/bin/ instead of bin/
+// This task creates a symlink to make it work with the native plugin
+tasks.register<Exec>("setupGraalVMCommunity") {
+    group = "build"
+    description = "Create symlink for native-image in GraalVM Community"
+    
+    val javaLauncher = graalvmNative.binaries.named("main").get().javaLauncher.get()
+    val graalvmHome = javaLauncher.executablePath.asFile.parentFile.parentFile
+    val binDir = graalvmHome.resolve("bin")
+    val svmBinDir = graalvmHome.resolve("lib/svm/bin")
+    val nativeImageLink = binDir.resolve("native-image")
+    val nativeImageReal = svmBinDir.resolve("native-image")
+    
+    onlyIf {
+        // Only run if native-image doesn't exist or is empty (Community edition case)
+        nativeImageReal.exists() && (!nativeImageLink.exists() || nativeImageLink.length() == 0L)
+    }
+    
+    commandLine("ln", "-sf", nativeImageReal.absolutePath, nativeImageLink.absolutePath)
+    
+    doFirst {
+        logger.lifecycle("Setting up GraalVM Community native-image symlink")
+        logger.lifecycle("  From: ${nativeImageReal.absolutePath}")
+        logger.lifecycle("  To: ${nativeImageLink.absolutePath}")
+    }
+}
+
+tasks.named("nativeCompile") {
+    dependsOn("setupGraalVMCommunity")
+}
+
+tasks.register("buildNativeImage") {
     group = "build"
     description = "Build GraalVM native image"
-    workingDir(rootProject.rootDir)
-    commandLine("${System.getProperty("user.home")}/.sdkman/candidates/java/24-graal/bin/gradlew", ":app:nativeRun", "--no-daemon")
+    dependsOn("nativeCompile")
 }
 
 tasks {

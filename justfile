@@ -2,7 +2,7 @@ build:
     ./gradlew :app:shadowJar
 
 build-native:
-    export JAVA_HOME="$HOME/.sdkman/candidates/java/24-graal" && export PATH="$JAVA_HOME/bin:$PATH" && ./gradlew :app:nativeCompile --no-daemon --info
+    ./gradlew :app:nativeCompile
 
 run:
     java --enable-native-access=ALL-UNNAMED -jar app/build/libs/abrechnung-all.jar AppKt

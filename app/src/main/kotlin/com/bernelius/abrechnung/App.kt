@@ -63,15 +63,17 @@ object Songs {
     const val FINSTERNIS = "music/FINSTERNIS.ogg"
 }
 
-val audioPlayer = CrossfadingAudioPlayer()
 val dateProvider = SystemDateProvider()
 var terminalConfig = ConfigManager.loadConfig().terminalConfig
 
 
 suspend fun main() {
     configureLogging()
+    val audioPlayer = CrossfadingAudioPlayer()
     val ui = MordantUI()
-    var scene = MordantScene(ui).apply { display() }
+    var scene = MordantScene(ui).apply {
+        display()
+    }
     lateinit var startupData: StartupData
     lateinit var appScope: CoroutineScope
     ui.withLoading(block = {
@@ -82,6 +84,8 @@ suspend fun main() {
     }, message = "initializing")
 
 
+    System.err.println("we are here")
+    exitProgram()
     var mainSong = if (startupData.overdueState) Songs.FINSTERNIS else Songs.ABRECHNUNG
     var credentialsConfig = startupData.credentialsConfig
 
@@ -123,6 +127,7 @@ suspend fun main() {
             },
             'q' to { exitProgram() },
         )
+
 
     val logo = renderLogo("Abrechnung?", fontName = th.primaryFont)
     val logoWidth = logo.split("\n")[0].length

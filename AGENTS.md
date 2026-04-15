@@ -87,6 +87,7 @@ Review architecture documentation when:
 find app/src/main/kotlin/com/bernelius/abrechnung -type d | sort
 ls -la /home/bernelius/code/abrechnung/docs
 find app/src/main/resources -type f | wc -l  # Verify resource count
+ls -la app/src/main/resources/META-INF/native-image/  # Verify GraalVM config
 ```
 
 ### Section 3: Core Architecture Components
@@ -242,17 +243,31 @@ rg "loadConfig|ConfigManager" /home/bernelius/code/abrechnung/app/src/main/kotli
 - Changing Gradle version
 - Modifying build plugins
 - Adding new build tasks
+- Changing GraalVM native image configuration
+- Modifying build tool commands (justfile)
 
 **What to verify:**
-- All major dependencies are listed
+- All major dependencies are listed with correct versions
 - Version numbers are current
-- Build commands are accurate
+- Build commands are accurate (both Gradle and justfile)
 - Plugin purposes are explained
+- GraalVM plugin version and configuration is documented
+- Native image build arguments are accurate
+- Metadata repository settings are documented
 
 **Verify build configuration:**
 ```bash
 # Check for dependency updates
-cat /home/bernelius/code/abrechnung/app/build.gradle.kts | grep -E "implementation|version"
+cat /home/bernelius/code/abrechnung/app/build.gradle.kts | grep -E "implementation|version|plugin"
+
+# Check justfile commands
+cat /home/bernelius/code/abrechnung/justfile
+
+# Verify native-image configuration
+cat /home/bernelius/code/abrechnung/app/src/main/resources/META-INF/native-image/native-image.properties
+
+# Check Kotlin version in catalog
+cat /home/bernelius/code/abrechnung/gradle/libs.versions.toml
 ```
 
 ### Section 14: Configuration File Structure
@@ -300,12 +315,15 @@ cat /home/bernelius/code/abrechnung/app/build.gradle.kts | grep -E "implementati
 - Changing build outputs
 - Updating documentation
 - Modifying distribution
+- Changing GraalVM native image configuration
 
 **What to verify:**
 - All deployment options are documented
 - Prerequisites are clearly listed
 - Commands are accurate and tested
 - Environment-specific details are noted
+- GraalVM build arguments match configuration files
+- justfile commands are documented with descriptions
 
 ### Section 18: Async/Await Architecture
 **Check for accuracy when:**
@@ -362,6 +380,9 @@ Before committing code changes, verify:
 - [ ] Performance considerations are noted for significant changes
 - [ ] Breaking changes are clearly marked
 - [ ] Version compatibility is noted if dependencies changed
+- [ ] **GraalVM native image configuration is updated** (build args, metadata repository, plugin version)
+- [ ] **justfile commands are documented** in deployment section
+- [ ] **native-image.properties changes are reflected** in resource management section
 
 ## Documentation Style Guidelines
 

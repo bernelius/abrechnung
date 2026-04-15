@@ -14,6 +14,21 @@
     },
     {
       "pattern": "META-INF/services/.*"
+    },
+    {
+      "pattern": "linux/.*\\.so"
+    },
+    {
+      "pattern": "META-INF/linux/.*"
+    },
+    {
+      "pattern": "org/sqlite/native/.*"
+    },
+    {
+      "pattern": "org/flywaydb/.*"
+    },
+    {
+      "pattern": "META-INF/maven/org.flywaydb/.*"
     }
   ],
   "bundles": [

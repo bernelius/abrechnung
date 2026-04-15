@@ -3,6 +3,7 @@ package com.bernelius.abrechnung.database
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
+import org.slf4j.LoggerFactory
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.Cipher
@@ -11,6 +12,8 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import kotlin.reflect.KProperty
+
+private val logger = LoggerFactory.getLogger("SecureVault")
 
 class RequiredEncryptedDelegate(
     private val column: Column<String>,
@@ -112,7 +115,7 @@ object SecureVault {
             String(cipher.doFinal(ciphertext), UTF8)
         } catch (e: Exception) {
             // A failure here often means someone tampered with the data.
-            System.err.println("Decryption failed: ${e.message}")
+            logger.warn("Decryption failed: ${e.message}")
             null
         }
     }
