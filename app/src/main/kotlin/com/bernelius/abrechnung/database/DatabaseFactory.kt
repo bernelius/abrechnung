@@ -68,16 +68,11 @@ object DatabaseFactory {
 
         Database.connect(dataSource)
 
-        val isNativeBuild = System.getProperty("org.graalvm.nativeimage.imagecode") != null
-        if (isNativeBuild) {
-            EmbeddedMigrations.runMigrations()
-        } else {
-            val flyway = Flyway.configure()
-                .dataSource(dataSource)
-                .locations(migrationLocation)
-                .load()
-            flyway.migrate()
-        }
+        val flyway = Flyway.configure()
+            .dataSource(dataSource)
+            .locations(migrationLocation)
+            .load()
+        flyway.migrate()
     }
 
     fun initTestDatabase(dbName: String = "test-${System.currentTimeMillis()}.db") {

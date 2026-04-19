@@ -1,16 +1,34 @@
 {
   "resources": [
     {
-      "pattern": "db/migration/.*"
+      "pattern": "db/migration/.*\\.sql"
     },
     {
-      "pattern": "music/.*"
+      "pattern": "music/.*\\.ogg"
     },
     {
-      "pattern": "flf/.*"
+      "pattern": "flf/.*\\.flf"
     },
     {
-      "pattern": "fonts/.*"
+      "pattern": "fonts/.*\\.ttf"
+    },
+    {
+      "pattern": "META-INF/services/.*"
+    },
+    {
+      "pattern": "linux/.*\\.so"
+    },
+    {
+      "pattern": "META-INF/linux/.*"
+    },
+    {
+      "pattern": "org/sqlite/native/.*"
+    },
+    {
+      "pattern": "org/flywaydb/.*"
+    },
+    {
+      "pattern": "META-INF/maven/org.flywaydb/.*"
     },
     {
       "pattern": ".*\\.dll"
