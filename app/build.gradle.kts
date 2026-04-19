@@ -71,9 +71,9 @@ dependencies {
     implementation("org.lwjgl:lwjgl-openal:$lwjglVersion")
     implementation("org.lwjgl:lwjgl-stb:$lwjglVersion")
     for (native in lwjglNatives) {
-        runtimeOnly("org.lwjgl:lwjgl:$lwjglVersion:$native")
-        runtimeOnly("org.lwjgl:lwjgl-openal:$lwjglVersion:$native")
-        runtimeOnly("org.lwjgl:lwjgl-stb:$lwjglVersion:$native")
+        implementation("org.lwjgl:lwjgl:$lwjglVersion:$native")
+        implementation("org.lwjgl:lwjgl-openal:$lwjglVersion:$native")
+        implementation("org.lwjgl:lwjgl-stb:$lwjglVersion:$native")
     }
 }
 
@@ -204,30 +204,44 @@ graalvmNative {
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.util.ContextInitializer\$1")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.ContextAwareImpl")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.FilterAttachableImpl")
+            // LWJGL needs run-time initialization (requires actual audio hardware)
+            buildArgs.add("--initialize-at-run-time=org.lwjgl")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.openal")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.stb")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system")
         }
     }
 }
+
+val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+
+val graalvmHome = providers.gradleProperty("graalvmHome").orElse("").get()
 
 // GraalVM Community has native-image in lib/svm/bin/ instead of bin/
 // This task creates a symlink to make it work with the native plugin
 tasks.register<Exec>("setupGraalVMCommunity") {
     group = "build"
     description = "Create symlink for native-image in GraalVM Community"
-    
+
     val javaLauncher = graalvmNative.binaries.named("main").get().javaLauncher.get()
-    val graalvmHome = javaLauncher.executablePath.asFile.parentFile.parentFile
-    val binDir = graalvmHome.resolve("bin")
-    val svmBinDir = graalvmHome.resolve("lib/svm/bin")
+    val graalvmHomeDir = if (graalvmHome.isEmpty()) {
+        javaLauncher.executablePath.asFile.parentFile.parentFile
+    } else {
+        file(graalvmHome)
+    }
+    val binDir = graalvmHomeDir.resolve("bin")
+    val svmBinDir = graalvmHomeDir.resolve("lib/svm/bin")
     val nativeImageLink = binDir.resolve("native-image")
     val nativeImageReal = svmBinDir.resolve("native-image")
-    
+
     onlyIf {
-        // Only run if native-image doesn't exist or is empty (Community edition case)
-        nativeImageReal.exists() && (!nativeImageLink.exists() || nativeImageLink.length() == 0L)
+        // Skip on Windows - native-image.cmd is already in bin/
+        // Only create symlink if the real binary exists but the link doesn't
+        !isWindows && nativeImageReal.exists() && (!nativeImageLink.exists() || nativeImageLink.length() == 0L)
     }
-    
+
     commandLine("ln", "-sf", nativeImageReal.absolutePath, nativeImageLink.absolutePath)
-    
+
     doFirst {
         logger.lifecycle("Setting up GraalVM Community native-image symlink")
         logger.lifecycle("  From: ${nativeImageReal.absolutePath}")

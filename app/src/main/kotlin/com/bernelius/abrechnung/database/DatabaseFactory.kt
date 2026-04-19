@@ -66,13 +66,18 @@ object DatabaseFactory {
         else
             "classpath:db/migration/postgres"
 
-        val flyway = Flyway.configure()
-            .dataSource(dataSource)
-            .locations(migrationLocation)
-            .load()
-        flyway.migrate()
-
         Database.connect(dataSource)
+
+        val isNativeBuild = System.getProperty("org.graalvm.nativeimage.imagecode") != null
+        if (isNativeBuild) {
+            EmbeddedMigrations.runMigrations()
+        } else {
+            val flyway = Flyway.configure()
+                .dataSource(dataSource)
+                .locations(migrationLocation)
+                .load()
+            flyway.migrate()
+        }
     }
 
     fun initTestDatabase(dbName: String = "test-${System.currentTimeMillis()}.db") {
