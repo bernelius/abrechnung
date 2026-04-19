@@ -75,6 +75,10 @@ dependencies {
         implementation("org.lwjgl:lwjgl-openal:$lwjglVersion:$native")
         implementation("org.lwjgl:lwjgl-stb:$lwjglVersion:$native")
     }
+    // Windows natives for native image - runtime to ensure bundling
+    runtimeOnly("org.lwjgl:lwjgl:$lwjglVersion:natives-windows")
+    runtimeOnly("org.lwjgl:lwjgl-openal:$lwjglVersion:natives-windows")
+    runtimeOnly("org.lwjgl:lwjgl-stb:$lwjglVersion:natives-windows")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

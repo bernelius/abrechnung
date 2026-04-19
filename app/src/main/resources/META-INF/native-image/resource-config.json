@@ -11,6 +11,12 @@
     },
     {
       "pattern": "fonts/.*"
+    },
+    {
+      "pattern": ".*\\.dll"
+    },
+    {
+      "pattern": ".*/natives-windows/.*"
     }
   ],
   "bundles": [
