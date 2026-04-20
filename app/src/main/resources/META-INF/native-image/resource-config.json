@@ -10,7 +10,10 @@
       "pattern": "flf/.*\\.flf"
     },
     {
-      "pattern": "fonts/.*\\.ttf"
+      "pattern": "fonts/inter/Inter_18pt-Regular\\.ttf"
+    },
+    {
+      "pattern": "fonts/inter/Inter_24pt-Bold\\.ttf"
     },
     {
       "pattern": "META-INF/services/.*"
@@ -22,6 +25,18 @@
       "pattern": "META-INF/linux/.*"
     },
     {
+      "pattern": "macos/.*\\.dylib"
+    },
+    {
+      "pattern": "META-INF/macos/.*"
+    },
+    {
+      "pattern": "windows/.*\\.dll"
+    },
+    {
+      "pattern": "META-INF/windows/.*"
+    },
+    {
       "pattern": "org/sqlite/native/.*"
     },
     {
@@ -29,12 +44,6 @@
     },
     {
       "pattern": "META-INF/maven/org.flywaydb/.*"
-    },
-    {
-      "pattern": ".*\\.dll"
-    },
-    {
-      "pattern": ".*/natives-windows/.*"
     }
   ],
   "bundles": [
