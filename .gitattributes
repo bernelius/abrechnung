@@ -18,5 +18,8 @@
 *.dll           binary
 *.so            binary
 *.dylib         binary
+*.png           binary
+*.xcf           binary
+*.ico           binary
 
-*               text eol=lf
+*               text=auto eol=lf

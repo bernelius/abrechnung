@@ -153,6 +153,7 @@ graalvmNative {
     }
     binaries {
         named("main") {
+            imageName.set("abrechnung") 
             javaLauncher.set(javaToolchains.launcherFor {
                 languageVersion.set(JavaLanguageVersion.of(24))
                 vendor.set(JvmVendorSpec.GRAAL_VM)
@@ -215,6 +216,20 @@ graalvmNative {
             buildArgs.add("--initialize-at-run-time=org.lwjgl.stb")
             buildArgs.add("--initialize-at-run-time=org.lwjgl.system")
         }
+
+        // Windows launcher with embedded icon - only configured on Windows
+        if (System.getProperty("os.name").lowercase().contains("windows")) {
+            create("launcher") {
+                imageName.set("abrechnung-launcher")
+                mainClass.set("com.bernelius.abrechnung.launcher.WindowsLauncherKt")
+                javaLauncher.set(javaToolchains.launcherFor {
+                    languageVersion.set(JavaLanguageVersion.of(24))
+                    vendor.set(JvmVendorSpec.GRAAL_VM)
+                })
+                buildArgs.add("-H:Icon=${file("src/main/resources/img/abrechnung_dllar_logo.ico").absolutePath}")
+                buildArgs.add("--no-fallback")
+            }
+        }
     }
 }
 
@@ -257,15 +272,22 @@ tasks.register<Exec>("setupGraalVMCommunity") {
 tasks.named("nativeCompile") {
     dependsOn("setupGraalVMCommunity")
 
-    doLast {
-        val outputDir = layout.buildDirectory.dir("native/nativeCompile").get().asFile
-        val exeName = "app.exe"
-        val batContent = """
-            @echo off
-            start /max wt.exe -p "Command Prompt" cmd /c "cd /d \"%~dp0\" && chcp 65001 >nul && $exeName" %*
-        """.trimIndent()
-        File(outputDir, "abrechnung.bat").writeText(batContent)
-        logger.lifecycle("Created Windows launcher: ${outputDir.absolutePath}/abrechnung.bat")
+    if (isWindows) {
+        finalizedBy("nativeCompileLauncher")
+    }
+}
+
+// Configure the Windows launcher task when on Windows
+if (isWindows) {
+    tasks.named("nativeCompileLauncher") {
+        group = "build"
+        description = "Build Windows launcher executable with embedded icon"
+
+        doLast {
+            val outputDir = layout.buildDirectory.dir("native/nativeCompile").get().asFile
+            val launcherExe = outputDir.resolve("abrechnung-launcher.exe")
+            logger.lifecycle("Windows launcher built: ${launcherExe.absolutePath}")
+        }
     }
 }
 

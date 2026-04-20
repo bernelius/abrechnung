@@ -11,10 +11,10 @@ run-local:
     ABRECHNUNG_DB_URL="" java --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow -jar app/build/libs/abrechnung-all.jar AppKt
 
 run-native:
-    ./app/build/native/nativeCompile/app
+    ./app/build/native/nativeCompile/abrechnung
 
 run-native-local:
-    ABRECHNUNG_DB_URL="" ./app/build/native/nativeCompile/app
+    ABRECHNUNG_DB_URL="" ./app/build/native/nativeCompile/abrechnung
 
 test ARG="":
     ./gradlew :app:test {{ ARG }}
