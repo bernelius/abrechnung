@@ -13,17 +13,10 @@
 *.jar           binary
 
 # Code files - force LF line endings for cross-platform consistency
-*.kts           text eol=lf
-*.kt            text eol=lf
-*.java          text eol=lf
-*.xml           text eol=lf
-*.json          text eol=lf
-*.toml          text eol=lf
-*.properties    text eol=lf
-*.sql           text eol=lf
-*.md            text eol=lf
 
 # Native image files
 *.dll           binary
-*.so             binary
-*.dylib          binary
+*.so            binary
+*.dylib         binary
+
+*               text eol=lf

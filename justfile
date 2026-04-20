@@ -2,7 +2,7 @@ build:
     ./gradlew :app:shadowJar
 
 build-native:
-    ./gradlew :app:nativeCompile
+    ./gradlew :app:nativeCompile --no-configuration-cache
 
 run:
     java --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow -jar app/build/libs/abrechnung-all.jar AppKt
