@@ -399,6 +399,14 @@ invoiceNumber = "Invoice Number"
   - `--enable-all-security-services`
 - GraalVM Community edition support via `setupGraalVMCommunity` task (creates symlink for native-image)
 
+**Windows Native Compilation:**
+- Windows native executable: `app.exe`
+- Windows Terminal launcher: `abrechnung.bat` (automatically generated during `nativeCompile`)
+- The launcher script uses Windows Terminal (`wt.exe`) with explicit Command Prompt profile
+- Sets UTF-8 code page (`chcp 65001`) for proper Unicode rendering of box-drawing characters
+- Launch command: `abrechnung.bat` (requires Windows Terminal installed)
+- All command-line arguments are passed through to the application
+
 **Database Options:**
 - Default: SQLite (embedded, zero-config)
 - Production: PostgreSQL (via `ABRECHNUNG_DB_URL`)

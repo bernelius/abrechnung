@@ -19,6 +19,7 @@ import org.openpdf.text.pdf.PdfPCell
 import org.openpdf.text.pdf.PdfPTable
 import org.openpdf.text.pdf.PdfWriter
 import java.awt.Color
+import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
@@ -82,6 +83,14 @@ private fun generatePdfLogic(
     val redFontBold = Font(baseBold, 8f, Font.NORMAL, hexColor("#EE4B2B"))
 
     val document = Document(PageSize.A4, 50f, 50f, 50f, 50f)
+
+    val file = File(outputPath)
+    file.parentFile?.let {
+        if (!it.exists()) {
+            it.mkdirs()
+        }
+    }
+
     PdfWriter.getInstance(document, FileOutputStream(outputPath))
 
     document.open()

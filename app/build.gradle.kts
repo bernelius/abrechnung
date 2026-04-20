@@ -159,6 +159,7 @@ graalvmNative {
             })
             buildArgs.add("--enable-url-protocols=https,http")
             buildArgs.add("--enable-native-access=ALL-UNNAMED")
+            buildArgs.add("-H:+AddAllCharsets")
             // Suppress sun.misc.Unsafe deprecation warnings from LWJGL
             buildArgs.add("-J--sun-misc-unsafe-memory-access=allow")
             // HikariCP and Logback need build-time initialization for GraalVM native image
@@ -255,6 +256,17 @@ tasks.register<Exec>("setupGraalVMCommunity") {
 
 tasks.named("nativeCompile") {
     dependsOn("setupGraalVMCommunity")
+
+    doLast {
+        val outputDir = layout.buildDirectory.dir("native/nativeCompile").get().asFile
+        val exeName = "app.exe"
+        val batContent = """
+            @echo off
+            start /max wt.exe -p "Command Prompt" cmd /c "cd /d \"%~dp0\" && chcp 65001 >nul && $exeName" %*
+        """.trimIndent()
+        File(outputDir, "abrechnung.bat").writeText(batContent)
+        logger.lifecycle("Created Windows launcher: ${outputDir.absolutePath}/abrechnung.bat")
+    }
 }
 
 tasks.register("buildNativeImage") {

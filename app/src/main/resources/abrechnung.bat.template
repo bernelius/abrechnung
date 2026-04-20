@@ -1,0 +1,2 @@
+@echo off
+start /max wt.exe -p "Command Prompt" cmd /c "cd /d "%~dp0" && chcp 65001 >nul && app.exe" %*
