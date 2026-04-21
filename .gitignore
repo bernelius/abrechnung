@@ -5,7 +5,7 @@
 build
 
 abrechnung.db
-abrechnung.log
+*.log
 
 .settings/
 bin/

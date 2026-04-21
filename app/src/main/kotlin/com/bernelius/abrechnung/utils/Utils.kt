@@ -80,9 +80,7 @@ fun getProjectDir(): Path {
         current = parent
     }
 
-    System.err.println(
-        "WARNING: Could not find .abrechnung marker. Using working directory."
-    )
+    System.err.println("WARNING: Could not find .abrechnung marker. Using working directory.")
 
     return Paths.get("").toAbsolutePath()
 }

@@ -1,5 +1,6 @@
 package com.bernelius.abrechnung.audioplayer
 
+import java.lang.UnsatisfiedLinkError
 import org.lwjgl.openal.AL
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10.alcCloseDevice
@@ -79,11 +80,15 @@ class CrossfadingAudioPlayer {
         running = true
         audioThread =
             Thread({
-                initOpenAL()
                 try {
-                    audioLoop()
-                } finally {
-                    destroyOpenAL()
+                    initOpenAL()
+                    try {
+                        audioLoop()
+                    } finally {
+                        destroyOpenAL()
+                    }
+                } catch (e: Throwable) {
+                    System.err.println("Audio disabled: ${e.message}")
                 }
             }, "AudioPlayer").apply {
                 isDaemon = true

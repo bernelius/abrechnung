@@ -1,0 +1,62 @@
+[
+  {
+    "name": "org.lwjgl.system.JNI",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.lwjgl.openal.AL",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.lwjgl.openal.ALC",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.lwjgl.openal.AL10",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.lwjgl.openal.AL11",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.lwjgl.openal.ALC10",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.lwjgl.openal.ALC11",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.lwjgl.stb.STBVorbis",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.lwjgl.system.MemoryUtil",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.lwjgl.system.MemoryStack",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.sqlite.core.NativeDB",
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.postgresql.Driver",
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.postgresql.PGConnection",
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.postgresql.jdbc.PgConnection",
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  }
+]

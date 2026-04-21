@@ -1,0 +1,57 @@
+{
+  "resources": [
+    {
+      "pattern": "db/migration/.*\\.sql"
+    },
+    {
+      "pattern": "music/.*\\.ogg"
+    },
+    {
+      "pattern": "flf/.*\\.flf"
+    },
+    {
+      "pattern": "fonts/inter/Inter_18pt-Regular\\.ttf"
+    },
+    {
+      "pattern": "fonts/inter/Inter_24pt-Bold\\.ttf"
+    },
+    {
+      "pattern": "META-INF/services/.*"
+    },
+    {
+      "pattern": "linux/.*\\.so"
+    },
+    {
+      "pattern": "META-INF/linux/.*"
+    },
+    {
+      "pattern": "macos/.*\\.dylib"
+    },
+    {
+      "pattern": "META-INF/macos/.*"
+    },
+    {
+      "pattern": "windows/.*\\.dll"
+    },
+    {
+      "pattern": "META-INF/windows/.*"
+    },
+    {
+      "pattern": "org/sqlite/native/.*"
+    },
+    {
+      "pattern": "org/flywaydb/.*"
+    },
+    {
+      "pattern": "META-INF/maven/org.flywaydb/.*"
+    }
+  ],
+  "bundles": [
+    {
+      "name": "kotlin-time"
+    },
+    {
+      "name": "kotlin-collections"
+    }
+  ]
+}

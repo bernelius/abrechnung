@@ -12,7 +12,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.3.20-RC2"
     id("com.gradleup.shadow") version "9.3.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
-    id("org.graalvm.buildtools.native") version "0.11.5"
+    id("org.graalvm.buildtools.native") version "1.0.0"
     id("org.jetbrains.kotlinx.kover") version "0.9.8"
     application
 }
@@ -65,7 +65,12 @@ dependencies {
     implementation("org.eclipse.angus:jakarta.mail:2.1.0-M1")
     // audio — LWJGL OpenAL + STB Vorbis
     val lwjglVersion = "3.4.1"
-    val lwjglNatives = listOf("natives-linux", "natives-macos", "natives-macos-arm64", "natives-windows")
+    // Platform-specific natives - only include current platform
+    val lwjglNatives = when {
+        System.getProperty("os.name").lowercase().contains("win") -> listOf("natives-windows")
+        System.getProperty("os.name").lowercase().contains("mac") -> listOf("natives-macos", "natives-macos-arm64")
+        else -> listOf("natives-linux")
+    }
 
     implementation("org.lwjgl:lwjgl:$lwjglVersion")
     implementation("org.lwjgl:lwjgl-openal:$lwjglVersion")
@@ -78,7 +83,12 @@ dependencies {
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
-java { toolchain { languageVersion = JavaLanguageVersion.of(24) } }
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(24)
+        vendor = JvmVendorSpec.GRAAL_VM
+    }
+}
 
 application {
     // Define the main class for the application.
@@ -137,6 +147,199 @@ tasks.named<Test>("test") {
     })
 }
 
+graalvmNative {
+    // Metadata repository disabled - versions >= 0.3.33 use new format incompatible with plugin 1.0.0
+    metadataRepository {
+        enabled.set(false)
+    }
+    binaries {
+        named("main") {
+            imageName.set("abrechnung") 
+            javaLauncher.set(javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(24))
+                vendor.set(JvmVendorSpec.GRAAL_VM)
+            })
+            buildArgs.add("--enable-url-protocols=https,http")
+            buildArgs.add("--enable-native-access=ALL-UNNAMED")
+            buildArgs.add("-H:+AddAllCharsets")
+            // Suppress sun.misc.Unsafe deprecation warnings from LWJGL
+            buildArgs.add("-J--sun-misc-unsafe-memory-access=allow")
+            // HikariCP and Logback need build-time initialization for GraalVM native image
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.HikariConfig")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.HikariDataSource")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.pool.HikariPool")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.pool.PoolBase")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.util.DriverDataSource")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.util.PropertyElf")
+            buildArgs.add("--initialize-at-build-time=com.zaxxer.hikari.util.UtilityElf")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.Logger")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.Level")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.LoggerContext")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.spi.LogbackServiceProvider")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.spi.TurboFilterList")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.spi.LoggerContextVO")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.AppenderAttachableImpl")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.BasicStatusManager")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.COWArrayList")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.ConsoleAppender")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.OutputStreamAppender")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.encoder.LayoutWrappingEncoder")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.pattern.PatternLayoutEncoderBase")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.PatternLayout")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.encoder.PatternLayoutEncoder")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.helpers.CyclicBuffer")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.LogbackLock")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.ContextBase")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.AppenderBase")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget\$1")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget\$2")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.OutputStreamAppender")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.UnsynchronizedAppenderBase")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.status.InfoStatus")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.status.Status")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.util.LogbackMDCAdapter")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.BasicConfigurator")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.util.ContextInitializer")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.layout.TTLLLayout")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.pattern.ThrowableProxyConverter")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.SimpleTimeBasedGuard")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.ReentryGuard")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.ReentryGuard\$ReentryGuardImpl")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.CachingDateFormatter")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.CachingDateFormatter\$CacheTuple")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.util.ContextInitializer\$1")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.ContextAwareImpl")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.FilterAttachableImpl")
+            // LWJGL needs run-time initialization (requires actual audio hardware)
+            buildArgs.add("--initialize-at-run-time=org.lwjgl")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.openal")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.stb")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system")
+        }
+
+    }
+}
+
+val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+
+val graalvmHome = providers.gradleProperty("graalvmHome").orElse("").get()
+
+// GraalVM Community has native-image in lib/svm/bin/ instead of bin/
+// This task creates a symlink to make it work with the native plugin
+tasks.register<Exec>("setupGraalVMCommunity") {
+    group = "build"
+    description = "Create symlink for native-image in GraalVM Community"
+
+    val javaLauncher = graalvmNative.binaries.named("main").get().javaLauncher.get()
+    val graalvmHomeDir = if (graalvmHome.isEmpty()) {
+        javaLauncher.executablePath.asFile.parentFile.parentFile
+    } else {
+        file(graalvmHome)
+    }
+    val binDir = graalvmHomeDir.resolve("bin")
+    val svmBinDir = graalvmHomeDir.resolve("lib/svm/bin")
+    val nativeImageLink = binDir.resolve("native-image")
+    val nativeImageReal = svmBinDir.resolve("native-image")
+
+    onlyIf {
+        // Skip on Windows - native-image.cmd is already in bin/
+        // Only create symlink if the real binary exists but the link doesn't
+        !isWindows && nativeImageReal.exists() && (!nativeImageLink.exists() || nativeImageLink.length() == 0L)
+    }
+
+    commandLine("ln", "-sf", nativeImageReal.absolutePath, nativeImageLink.absolutePath)
+
+    doFirst {
+        logger.lifecycle("Setting up GraalVM Community native-image symlink")
+        logger.lifecycle("  From: ${nativeImageReal.absolutePath}")
+        logger.lifecycle("  To: ${nativeImageLink.absolutePath}")
+    }
+}
+
+// Prepare Windows resources in build output directory
+tasks.register("prepareWindowsResources") {
+    group = "build"
+    description = "Create launch.bat and copy icon to build output"
+    onlyIf { isWindows }
+
+    val outputDir = layout.buildDirectory.dir("native/nativeCompile").get().asFile
+    val iconSource = file("build-tools/windows/abrechnung_dllar_logo.ico")
+    val batTarget = outputDir.resolve("launch.bat")
+    val iconTarget = outputDir.resolve("abrechnung_dllar_logo.ico")
+
+    doLast {
+        logger.lifecycle("Creating Windows resources in build output...")
+
+        // Write launch.bat with Windows line endings
+        val batContent = """
+            @echo off
+            wt.exe -M -f -p "Command Prompt" cmd /c "cd /d ""%~dp0"" && chcp 65001 >nul && abrechnung.exe"
+        """.trimIndent().replace("\n", "\r\n")
+        batTarget.writeText(batContent)
+
+        // Copy icon file
+        iconSource.copyTo(iconTarget, overwrite = true)
+
+        logger.lifecycle("Windows resources created: ${batTarget.absolutePath}, ${iconTarget.absolutePath}")
+    }
+}
+
+// Create Windows shortcut (.lnk) using PowerShell
+tasks.register<Exec>("createWindowsShortcut") {
+    group = "build"
+    description = "Create Windows shortcut with embedded icon"
+    onlyIf { isWindows }
+    dependsOn("prepareWindowsResources")
+
+    val outputDir = layout.buildDirectory.dir("native/nativeCompile").get().asFile
+    workingDir = outputDir
+
+    commandLine(
+        "powershell.exe",
+        "-ExecutionPolicy", "Bypass",
+        "-File", file("build-tools/windows/create-shortcut.ps1").absolutePath
+    )
+
+    doFirst {
+        logger.lifecycle("Creating Windows shortcut...")
+    }
+
+    doLast {
+        logger.lifecycle("Windows shortcut created: ${outputDir.resolve("Abrechnung.lnk").absolutePath}")
+    }
+}
+
+// Copy .abrechnung marker file to native compile output
+tasks.register<Copy>("copyAbrechnungMarker") {
+    group = "build"
+    description = "Copy .abrechnung marker file to native compile output"
+
+    from("${project.rootDir}/.abrechnung")
+    into(layout.buildDirectory.dir("native/nativeCompile"))
+
+    doFirst {
+        logger.lifecycle("Copying .abrechnung marker file to build output...")
+    }
+}
+
+tasks.named("nativeCompile") {
+    dependsOn("setupGraalVMCommunity")
+
+    finalizedBy("copyAbrechnungMarker")
+
+    if (isWindows) {
+        finalizedBy("createWindowsShortcut")
+    }
+}
+
+
+tasks.register("buildNativeImage") {
+    group = "build"
+    description = "Build GraalVM native image"
+    dependsOn("nativeCompile")
+}
+
 tasks {
     shadowJar {
         archiveBaseName.set("abrechnung")
@@ -144,5 +347,66 @@ tasks {
             include("META-INF/services/**")
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }
+        // Exclude native libraries for non-target platforms to reduce binary size
+        val osName = System.getProperty("os.name").lowercase()
+        when {
+            osName.contains("win") -> {
+                // Windows build: exclude Linux, macOS, FreeBSD natives
+                exclude("org/sqlite/native/FreeBSD/**")
+                exclude("org/sqlite/native/Mac/**")
+                exclude("org/sqlite/native/Linux*/**")
+                exclude("com/sun/jna/linux*/**")
+                exclude("com/sun/jna/aix*/**")
+                exclude("com/sun/jna/freebsd*/**")
+                exclude("com/sun/jna/sunos*/**")
+            }
+            osName.contains("mac") -> {
+                // macOS build: exclude Linux, Windows, FreeBSD natives
+                exclude("org/sqlite/native/FreeBSD/**")
+                exclude("org/sqlite/native/Windows/**")
+                exclude("org/sqlite/native/Linux*/**")
+                exclude("com/sun/jna/linux*/**")
+                exclude("com/sun/jna/win32*/**")
+                exclude("com/sun/jna/aix*/**")
+                exclude("com/sun/jna/freebsd*/**")
+                exclude("com/sun/jna/sunos*/**")
+            }
+            else -> {
+                // Linux build: exclude Windows, macOS, FreeBSD natives
+                exclude("org/sqlite/native/FreeBSD/**")
+                exclude("org/sqlite/native/Mac/**")
+                exclude("org/sqlite/native/Windows/**")
+                exclude("org/sqlite/native/Linux-Android/**")
+                exclude("org/sqlite/native/Linux-Musl/**")
+                exclude("org/sqlite/native/Linux/aarch64/**")
+                exclude("org/sqlite/native/Linux/arm*/**")
+                exclude("org/sqlite/native/Linux/ppc*/**")
+                exclude("org/sqlite/native/Linux/riscv*/**")
+                exclude("org/sqlite/native/Linux/x86/**")
+                exclude("com/sun/jna/aix*/**")
+                exclude("com/sun/jna/freebsd*/**")
+                exclude("com/sun/jna/sunos*/**")
+                exclude("com/sun/jna/win32*/**")
+                exclude("com/sun/jna/linux-aarch64*/**")
+                exclude("com/sun/jna/linux-arm*/**")
+                exclude("com/sun/jna/linux-loongarch64*/**")
+                exclude("com/sun/jna/linux-x86/**")
+                exclude("com/sun/jna/linux-mips64el*/**")
+                exclude("com/sun/jna/linux-riscv64*/**")
+                exclude("com/sun/jna/linux-s390x*/**")
+            }
+        }
+        // Add JVM arguments to manifest to suppress sun.misc.Unsafe warnings at runtime
+        manifest {
+            attributes(
+                "Main-Class" to "com.bernelius.abrechnung.AppKt",
+                "Multi-Release" to "true"
+            )
+        }
     }
+}
+
+// Configure the application plugin to pass JVM args when running
+application {
+    applicationDefaultJvmArgs = listOf("--sun-misc-unsafe-memory-access=allow")
 }

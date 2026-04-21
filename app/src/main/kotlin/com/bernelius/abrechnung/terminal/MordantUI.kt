@@ -262,41 +262,47 @@ class MordantUI(
     val size: Size get() = t.size
 
     override fun print(scene: Scene): Int {
-        val ui = this
-        t.cursor.move {
-            setPosition(0, 0)
-        }
         val lines = scene.rows.joinToString("\n") { it.harden(this) }.lines()
         val adjustment = (t.size.height - lines.size) / 2
         var cursorRow = 0
-        if (adjustment > 0) {
-            while (cursorRow < adjustment) {
-                t.cursor.move {
-                    setPosition(0, cursorRow++)
-                    clearLineAfterCursor()
+
+        // Build the entire frame as a single string and print atomically
+        val frame = buildString {
+            // Move to top-left
+            append(t.cursor.getMoves { setPosition(0, 0) })
+
+            // Top margin
+            if (adjustment > 0) {
+                repeat(adjustment) {
+                    append(t.cursor.getMoves { clearLine() })
+                    append("\n")
                 }
+                cursorRow = adjustment
+            }
+
+            // Content lines
+            for (line in lines) {
+                val padding = max(0, (t.size.width - line.visualLength()) / 2)
+                append(" ".repeat(padding))
+                append(line)
+                append(t.cursor.getMoves { clearLineAfterCursor() })
+                append("\n")
+                cursorRow++
+            }
+
+            // Bottom margin
+            while (cursorRow < t.size.height - 1) {
+                append(t.cursor.getMoves { clearLine() })
+                append("\n")
+                cursorRow++
+            }
+            if (cursorRow < t.size.height) {
+                append(t.cursor.getMoves { clearLine() })
             }
         }
 
-        for (line in lines) {
-            val padding = max(0, (t.size.width - line.visualLength()) / 2)
-            t.cursor.move {
-                setPosition(padding, cursorRow++)
-                clearLineBeforeCursor()
-            }
-            t.rawPrint(line)
-            t.cursor.move {
-                clearLineAfterCursor()
-            }
-        }
-        val firstAvailableRow = cursorRow
-        while (cursorRow < t.size.height) {
-            t.cursor.move {
-                setPosition(0, cursorRow++)
-                clearLineAfterCursor()
-            }
-        }
-        return firstAvailableRow
+        t.rawPrint(frame)
+        return adjustment + lines.size - 1
     }
 
     override fun waitForEnter() {

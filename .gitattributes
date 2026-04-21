@@ -1,12 +1,25 @@
 #
 # https://help.github.com/articles/dealing-with-line-endings/
 #
+
 # Linux start script should use lf
 /gradlew        text eol=lf
 
 # These are Windows script files and should use crlf
 *.bat           text eol=crlf
+*.cmd           text eol=crlf
 
 # Binary files should be left untouched
 *.jar           binary
 
+# Code files - force LF line endings for cross-platform consistency
+
+# Native image files
+*.dll           binary
+*.so            binary
+*.dylib         binary
+*.png           binary
+*.xcf           binary
+*.ico           binary
+
+*               text=auto eol=lf
