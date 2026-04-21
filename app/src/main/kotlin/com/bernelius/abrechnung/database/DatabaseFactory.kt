@@ -1,7 +1,7 @@
 package com.bernelius.abrechnung.database
 
 import com.bernelius.abrechnung.utils.getEnv
-import com.bernelius.abrechnung.utils.getProjectDir
+import com.bernelius.abrechnung.utils.getDataDir
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -89,7 +89,7 @@ object DatabaseFactory {
     fun init() {
         val envVar = getEnv("ABRECHNUNG_DB_URL")
         val dbUrl = if (envVar.isNullOrBlank()) {
-            "jdbc:sqlite:${getProjectDir()}/abrechnung.db"
+            "jdbc:sqlite:${getDataDir()}/abrechnung.db"
         } else {
             envVar
         }

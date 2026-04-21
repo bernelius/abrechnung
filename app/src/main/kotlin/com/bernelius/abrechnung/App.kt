@@ -21,7 +21,7 @@ import com.bernelius.abrechnung.terminal.navigationLoop
 import com.bernelius.abrechnung.terminal.stdMenuRow
 import com.bernelius.abrechnung.utils.exitProgram
 import com.bernelius.abrechnung.utils.renderLogo
-import com.bernelius.abrechnung.utils.getProjectDir
+import com.bernelius.abrechnung.utils.getLogDir
 import com.bernelius.abrechnung.theme.Theme as th
 import com.bernelius.abrechnung.logging.configureLogging
 import com.github.ajalt.mordant.table.grid
@@ -93,7 +93,8 @@ suspend fun main() {
     }
     val originalOut = System.out
     val originalErr = System.err
-    val logFile = FileOutputStream("${getProjectDir()}/abrechnung-stdout.log", true)
+    val logDir = getLogDir()
+    val logFile = FileOutputStream("$logDir/abrechnung-stdout.log", false)
     System.setOut(PrintStream(logFile, true, "UTF-8"))
     // IMPORTANT! This stays redirected forever
     configureLogging()

@@ -4,10 +4,8 @@ import com.bernelius.abrechnung.cache.InvoiceCache
 import com.bernelius.abrechnung.cache.RecipientCache
 import com.bernelius.abrechnung.cache.UserConfigCache
 import com.bernelius.abrechnung.models.Validator
-import java.io.File
 import java.awt.Color
 import java.nio.file.Path
-import java.nio.file.Paths
 
 fun hexColor(hex: String): Color {
     val cleanHex = hex.removePrefix("#")
@@ -58,29 +56,110 @@ fun exitProgram() {
     kotlin.system.exitProcess(0)
 }
 
-fun getProjectDir(): Path {
-    System.getenv("ABRECHNUNG_PROJECT_DIR")?.let {
-        return Path.of(it)
+/**
+ * Returns the platform-specific directory for log files.
+ *
+ * Logs are written to:
+ * - Windows: %LOCALAPPDATA%\Abrechnung\logs\
+ * - Linux: ~/.local/share/abrechnung/logs/
+ * - macOS: ~/Library/Logs/Abrechnung/
+ *
+ * Can be overridden with ABRECHNUNG_LOG_DIR environment variable.
+ *
+ * @throws IllegalStateException if the directory cannot be created
+ */
+fun getLogDir(): Path {
+    // Check for environment variable override
+    System.getenv("ABRECHNUNG_LOG_DIR")?.let {
+        val path = Path.of(it).toAbsolutePath()
+        path.toFile().mkdirs()
+        return path
     }
 
-    val startDir = Paths.get(
-        System.getProperty("java.class.path").split(File.pathSeparator)
-            .firstOrNull { it.endsWith(".jar") }
-            ?.let { File(it).parentFile?.absolutePath }
-            ?: System.getProperty("user.dir")
-    ).toAbsolutePath()
-
-    var current = startDir.normalize()
-
-    while (current != current.parent) {
-        if (File(current.toFile(), ".abrechnung").exists()) {
-            return current
+    val osName = System.getProperty("os.name").lowercase()
+    val logDir = when {
+        osName.contains("win") -> {
+            val localAppData = System.getenv("LOCALAPPDATA")
+                ?: throw IllegalStateException("LOCALAPPDATA environment variable not set")
+            Path.of(localAppData, "Abrechnung", "logs")
         }
-        val parent = current.parent ?: break
-        current = parent
+        osName.contains("mac") -> {
+            val home = System.getProperty("user.home")
+            Path.of(home, "Library", "Logs", "Abrechnung")
+        }
+        else -> {
+            // Linux and other Unix-like systems
+            val xdgDataHome = System.getenv("XDG_DATA_HOME")
+            if (xdgDataHome != null) {
+                Path.of(xdgDataHome, "abrechnung", "logs")
+            } else {
+                val home = System.getProperty("user.home")
+                Path.of(home, ".local", "share", "abrechnung", "logs")
+            }
+        }
     }
 
-    System.err.println("WARNING: Could not find .abrechnung marker. Using working directory.")
+    val logDirFile = logDir.toFile()
+    if (!logDirFile.exists() && !logDirFile.mkdirs()) {
+        throw IllegalStateException(
+            "Failed to create log directory: $logDir\n" +
+                "Please ensure you have write permissions or set ABRECHNUNG_LOG_DIR environment variable."
+        )
+    }
 
-    return Paths.get("").toAbsolutePath()
+    return logDir.toAbsolutePath()
+}
+
+/**
+ * Returns the platform-specific directory for persistent data (database, etc.).
+ *
+ * Data is stored in:
+ * - Windows: %APPDATA%\Abrechnung\data\
+ * - Linux: ~/.local/share/abrechnung/
+ * - macOS: ~/Library/Application Support/Abrechnung/
+ *
+ * Can be overridden with ABRECHNUNG_DATA_DIR environment variable.
+ *
+ * @throws IllegalStateException if the directory cannot be created
+ */
+fun getDataDir(): Path {
+    // Check for environment variable override
+    System.getenv("ABRECHNUNG_DATA_DIR")?.let {
+        val path = Path.of(it).toAbsolutePath()
+        path.toFile().mkdirs()
+        return path
+    }
+
+    val osName = System.getProperty("os.name").lowercase()
+    val dataDir = when {
+        osName.contains("win") -> {
+            val appData = System.getenv("APPDATA")
+                ?: throw IllegalStateException("APPDATA environment variable not set")
+            Path.of(appData, "Abrechnung", "data")
+        }
+        osName.contains("mac") -> {
+            val home = System.getProperty("user.home")
+            Path.of(home, "Library", "Application Support", "Abrechnung")
+        }
+        else -> {
+            // Linux and other Unix-like systems
+            val xdgDataHome = System.getenv("XDG_DATA_HOME")
+            if (xdgDataHome != null) {
+                Path.of(xdgDataHome, "abrechnung")
+            } else {
+                val home = System.getProperty("user.home")
+                Path.of(home, ".local", "share", "abrechnung")
+            }
+        }
+    }
+
+    val dataDirFile = dataDir.toFile()
+    if (!dataDirFile.exists() && !dataDirFile.mkdirs()) {
+        throw IllegalStateException(
+            "Failed to create data directory: $dataDir\n" +
+                "Please ensure you have write permissions or set ABRECHNUNG_DATA_DIR environment variable."
+        )
+    }
+
+    return dataDir.toAbsolutePath()
 }
