@@ -1,0 +1,95 @@
+name: Build Native Images
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build Linux Native Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 24
+        uses: actions/setup-java@v4
+        with:
+          java-version: '24'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Linux native image
+        run: ./gradlew :app:nativeCompile --no-configuration-cache
+
+      - name: Package Linux binary
+        run: |
+          mkdir -p dist/linux
+          cp app/build/native/nativeCompile/abrechnung dist/linux/
+          cp .abrechnung dist/linux/
+          cd dist/linux
+          tar czf ../../abrechnung-linux-x64.tar.gz abrechnung .abrechnung
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: abrechnung-linux-x64
+          path: app/build/native/nativeCompile/abrechnung
+          retention-days: 30
+
+      - name: Attach to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: abrechnung-linux-x64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-windows:
+    name: Build Windows Native Image
+    runs-on: [self-hosted, Windows, X64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Windows native image
+        shell: cmd
+        run: gradlew.bat :app:nativeCompile --no-configuration-cache
+
+      - name: Package Windows binary
+        shell: powershell
+        run: |
+          $outputDir = "app/build/native/nativeCompile"
+          $distDir = "dist/windows"
+          New-Item -ItemType Directory -Force -Path $distDir
+          
+          Copy-Item "$outputDir/abrechnung.exe" $distDir/
+          Copy-Item "$outputDir/Abrechnung.lnk" $distDir/
+          Copy-Item "$outputDir/launch.bat" $distDir/
+          Copy-Item "$outputDir/abrechnung_dllar_logo.ico" $distDir/
+          Copy-Item ".abrechnung" $distDir/
+          
+          Compress-Archive -Path "$distDir/*" -DestinationPath "abrechnung-windows-x64.zip" -Force
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: abrechnung-windows-x64
+          path: |
+            app/build/native/nativeCompile/abrechnung.exe
+            app/build/native/nativeCompile/Abrechnung.lnk
+            app/build/native/nativeCompile/launch.bat
+            app/build/native/nativeCompile/abrechnung_dllar_logo.ico
+          retention-days: 30
+
+      - name: Attach to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: abrechnung-windows-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
