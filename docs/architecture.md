@@ -327,7 +327,7 @@ Additional build arguments configured in `build.gradle.kts`:
   - Depends on: `nativeCompile`, `prepareWindowsResources`
   - Command-line defines: `MyAppVersion`, `MyBuildDir`
   - Input files: `abrechnung.exe`, `launch.bat`, icon, Inno Setup script
-  - Output: `app/build/distributions/abrechnung-{version}-setup.exe`
+  - Output: `app/build/distributions/abrechnung-setup-{version}.exe`
   - Requires Inno Setup installed on Windows build machine (ISCC on PATH)
 - `setupGraalVMCommunity` - Creates symlink for GraalVM Community native-image
 - `prepareWindowsResources` - Generates `launch.bat` and copies icon
@@ -450,6 +450,24 @@ invoiceNumber = "Invoice Number"
 - Output: `app/build/distributions/abrechnung-x.y.z-setup.exe`
 - CI/CD: Automatically built and attached to GitHub Releases via `workflow_dispatch` or tag push
 - Note: Shortcuts and launcher use `launch.bat` to ensure Windows Terminal is used
+
+**macOS Native Compilation:**
+- Native executable built with GraalVM native-image
+- Build: `./gradlew :app:nativeCompile` (same as Linux)
+- Output: `app/build/native/nativeCompile/abrechnung`
+- Cross-compilation not supported - must build on macOS for macOS
+- Binaries are unsigned (standard for open source projects)
+- First run: Users may need to right-click → "Open" to bypass Gatekeeper
+
+**CI/CD Native Builds:**
+- GitHub Actions workflow: `.github/workflows/build-native.yml`
+- Triggered on tag push (`v*`) or manual `workflow_dispatch`
+- Four parallel build jobs:
+  - **Linux x64**: `ubuntu-latest` runner → `abrechnung-linux-x64-{tag}.tar.gz`
+  - **Windows x64**: Self-hosted Windows runner → `abrechnung-setup-{tag}.exe`
+  - **macOS ARM64**: `macos-latest` runner (Apple Silicon) → `abrechnung-macos-arm64-{tag}.tar.gz`
+  - **macOS x64**: `macos-13` runner (Intel) → `abrechnung-macos-x64-{tag}.tar.gz`
+- All artifacts automatically attached to GitHub Releases
 
 **Database Options:**
 - Default: SQLite (embedded, zero-config)

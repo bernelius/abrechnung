@@ -321,7 +321,7 @@ tasks.register<Exec>("buildInstaller") {
         outputDir.resolve("abrechnung_dllar_logo.ico"),
         buildToolsDir.resolve("abrechnung.iss")
     )
-    outputs.file(distOutputDir.resolve("abrechnung-${version}-setup.exe"))
+    outputs.file(distOutputDir.resolve("abrechnung-setup-${version}.exe"))
 
     // Inno Setup Compiler must be on PATH
     commandLine(
@@ -333,7 +333,7 @@ tasks.register<Exec>("buildInstaller") {
 
     doFirst {
         logger.lifecycle("Building Windows installer for version $version")
-        logger.lifecycle("  Output: ${distOutputDir.resolve("abrechnung-${version}-setup.exe").absolutePath}")
+        logger.lifecycle("  Output: ${distOutputDir.resolve("abrechnung-setup-${version}.exe").absolutePath}")
         distOutputDir.mkdirs()
     }
 
