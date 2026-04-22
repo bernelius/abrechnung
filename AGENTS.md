@@ -85,7 +85,7 @@ Review architecture documentation when:
 ```bash
 # Compare documented structure with actual
 find app/src/main/kotlin/com/bernelius/abrechnung -type d | sort
-ls -la /home/bernelius/code/abrechnung/docs
+ls -la <project_root>/docs
 find app/src/main/resources -type f | wc -l  # Verify resource count
 ls -la app/src/main/resources/META-INF/native-image/  # Verify GraalVM config
 ```
@@ -145,7 +145,7 @@ ls -la app/src/main/resources/META-INF/native-image/  # Verify GraalVM config
 **Verify repository interface:**
 ```bash
 # Count public methods in Repository object
-grep -E "suspend fun|fun" /home/bernelius/code/abrechnung/app/src/main/kotlin/com/bernelius/abrechnung/repository/Repository.kt
+grep -E "suspend fun|fun" <project_root>/app/src/main/kotlin/com/bernelius/abrechnung/repository/Repository.kt
 ```
 
 ### Section 7: Database Layer
@@ -164,7 +164,7 @@ grep -E "suspend fun|fun" /home/bernelius/code/abrechnung/app/src/main/kotlin/co
 **Verify database schema:**
 ```bash
 # Check tables defined in Schema.kt
-grep "object.*Table" /home/bernelius/code/abrechnung/app/src/main/kotlin/com/bernelius/abrechnung/database/Schema.kt
+grep "object.*Table" <project_root>/app/src/main/kotlin/com/bernelius/abrechnung/database/Schema.kt
 ```
 
 ### Section 8: Models
@@ -196,7 +196,7 @@ grep "object.*Table" /home/bernelius/code/abrechnung/app/src/main/kotlin/com/ber
 **Verify configuration loading:**
 ```bash
 # Check config defaults and loading
-rg "loadConfig|ConfigManager" /home/bernelius/code/abrechnung/app/src/main/kotlin/com/bernelius/abrechnung/
+rg "loadConfig|ConfigManager" <project_root>/app/src/main/kotlin/com/bernelius/abrechnung/
 ```
 
 ### Section 10: External Services Integration
@@ -258,16 +258,16 @@ rg "loadConfig|ConfigManager" /home/bernelius/code/abrechnung/app/src/main/kotli
 **Verify build configuration:**
 ```bash
 # Check for dependency updates
-cat /home/bernelius/code/abrechnung/app/build.gradle.kts | grep -E "implementation|version|plugin"
+cat <project_root>/app/build.gradle.kts | grep -E "implementation|version|plugin"
 
 # Check justfile commands
-cat /home/bernelius/code/abrechnung/justfile
+cat <project_root>/justfile
 
 # Verify native-image configuration
-cat /home/bernelius/code/abrechnung/app/src/main/resources/META-INF/native-image/native-image.properties
+cat <project_root>/app/src/main/resources/META-INF/native-image/native-image.properties
 
 # Check Kotlin version in catalog
-cat /home/bernelius/code/abrechnung/gradle/libs.versions.toml
+cat <project_root>/gradle/libs.versions.toml
 ```
 
 ### Section 14: Configuration File Structure

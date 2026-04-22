@@ -7,7 +7,7 @@
 ## Project Structure
 
 ```
-/home/bernelius/code/abrechnung/
+<project_root>/
 ├── app/src/main/kotlin/com/bernelius/abrechnung/    # Main source code
 │   ├── App.kt                                      # Application entry point
 │   ├── PDF/                                        # PDF generation module
@@ -378,8 +378,14 @@ invoiceNumber = "Invoice Number"
 
 **Data Locations:**
 - Configuration: `$XDG_CONFIG_HOME/abrechnung/` (or `~/.config/abrechnung/`)
-- Database: `$PROJECT_ROOT/abrechnung.db` (configurable via `ABRECHNUNG_DB_URL`)
+- Database: Platform-specific data directory (see below), configurable via `ABRECHNUNG_DB_URL`
 - Output: `$PROJECT_ROOT/output/` (invoices directory)
+
+**Default Database Locations:**
+- Windows: `%APPDATA%\Abrechnung\data\abrechnung.db`
+- Linux: `~/.local/share/abrechnung/abrechnung.db`
+- macOS: `~/Library/Application Support/Abrechnung/abrechnung.db`
+- Override: Set `ABRECHNUNG_DATA_DIR` environment variable
 
 **Migration Strategy:**
 - Flyway for schema versioning
