@@ -3,13 +3,13 @@
 A Kotlin-based TUI application for generating invoices and sending them to customers.
 Designed for freelancers and small businesses, with a retro aesthetic.
 
-![Main menu](./docs/img/abrechnung_main_menu_retro-glitch.png)
+![Main menu](./screenshots/abrechnung_main_menu_retro-glitch.png)
 
 ## Features
 
 - **Efficiency** - The fat has been trimmed away, leaving a minimal amount of impediments between you and a shipped invoice. Fill in the (tiny) form, hit yes, and you're done.
 - **Personality** - Abrechnung has interactive theme music composed by Bernelius and an interface that feels powerful and uncompromising.
-- **Invoice Generation** - Create PDF invoices that look like [this](./docs/img/abrechnung_invoice_example.png)
+- **Invoice Generation** - Create PDF invoices that look like [this](./screenshots/abrechnung_invoice_example.png)
 - **Recipient Management** - Register and update customer information
 - **Invoice Management** - Track and manage unpaid invoices
 - **Email Integration** - Send invoices directly via email
