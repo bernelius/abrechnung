@@ -7,7 +7,7 @@
 ## Project Structure
 
 ```
-/home/bernelius/code/abrechnung/
+<project_root>/
 ├── app/src/main/kotlin/com/bernelius/abrechnung/    # Main source code
 │   ├── App.kt                                      # Application entry point
 │   ├── PDF/                                        # PDF generation module
@@ -51,10 +51,13 @@
 │   ├── music/                                    # Audio files
 │   ├── flf/                                      # Figlet fonts
 │   └── META-INF/native-image/                    # GraalVM native-image config
+├── app/build-tools/                               # Build tooling
+│   └── windows/                                   # Windows-specific build files
+│       ├── abrechnung.iss                         # Inno Setup installer script
+│       └── abrechnung_dllar_logo.ico              # Windows icon
 ├── docs/                                         # Documentation
 ├── logos/                                        # Logo designs
-├── output/                                       # Generated invoices
-└── abrechnung.db                                 # SQLite database
+└── output/                                       # Generated invoices
 ```
 
 ## Core Architecture Components
@@ -262,6 +265,16 @@ The `Repository` object is a singleton that provides all data access operations:
 - **Environment Variables**: Safe environment variable access
 - **Logo Rendering**: Figlet-based ASCII art generation
 - **Project Directory**: Path resolution helpers
+- **Log Directory**: Platform-specific log file location (`getLogDir()`)
+  - Windows: `%LOCALAPPDATA%\Abrechnung\logs\`
+  - Linux: `~/.local/share/abrechnung/logs/`
+  - macOS: `~/Library/Logs/Abrechnung/`
+  - Override: `ABRECHNUNG_LOG_DIR` environment variable
+- **Data Directory**: Platform-specific persistent data location (`getDataDir()`)
+  - Windows: `%APPDATA%\Abrechnung\data\`
+  - Linux: `~/.local/share/abrechnung/`
+  - macOS: `~/Library/Application Support/Abrechnung/`
+  - Override: `ABRECHNUNG_DATA_DIR` environment variable
 
 ## Build System
 
@@ -309,6 +322,16 @@ Additional build arguments configured in `build.gradle.kts`:
 - `-J--sun-misc-unsafe-memory-access=allow` (suppresses LWJGL deprecation warnings)
 - Metadata repository disabled (versions >= 0.3.33 use incompatible format)
 
+**Custom Build Tasks:**
+- `buildInstaller` - Creates Windows installer using Inno Setup
+  - Depends on: `nativeCompile`, `prepareWindowsResources`
+  - Command-line defines: `MyAppVersion`, `MyBuildDir`
+  - Input files: `abrechnung.exe`, `launch.bat`, icon, Inno Setup script
+  - Output: `app/build/distributions/abrechnung-setup-{version}.exe`
+  - Requires Inno Setup installed on Windows build machine (ISCC on PATH)
+- `setupGraalVMCommunity` - Creates symlink for GraalVM Community native-image
+- `prepareWindowsResources` - Generates `launch.bat` and copies icon
+
 ## Configuration File Structure
 
 **User Configuration (TOML):**
@@ -355,8 +378,14 @@ invoiceNumber = "Invoice Number"
 
 **Data Locations:**
 - Configuration: `$XDG_CONFIG_HOME/abrechnung/` (or `~/.config/abrechnung/`)
-- Database: `$PROJECT_ROOT/abrechnung.db` (configurable via `ABRECHNUNG_DB_URL`)
+- Database: Platform-specific data directory (see below), configurable via `ABRECHNUNG_DB_URL`
 - Output: `$PROJECT_ROOT/output/` (invoices directory)
+
+**Default Database Locations:**
+- Windows: `%APPDATA%\Abrechnung\data\abrechnung.db`
+- Linux: `~/.local/share/abrechnung/abrechnung.db`
+- macOS: `~/Library/Application Support/Abrechnung/abrechnung.db`
+- Override: Set `ABRECHNUNG_DATA_DIR` environment variable
 
 **Migration Strategy:**
 - Flyway for schema versioning
@@ -407,10 +436,62 @@ invoiceNumber = "Invoice Number"
 - Launch command: `abrechnung.bat` (requires Windows Terminal installed)
 - All command-line arguments are passed through to the application
 
+**Windows Installer:**
+- Professional EXE installer created using Inno Setup v6
+- Build task: `./gradlew :app:buildInstaller -Pversion=x.y.z`
+- Requirements: Inno Setup installed on Windows build machine (ISCC on PATH)
+- Features:
+  - Per-machine installation (requires administrator privileges)
+  - Start Menu shortcut (always created, points to `launch.bat`)
+  - Desktop shortcut (optional, enabled by default, user can opt-out during install)
+  - Custom installation directory selection
+  - Proper uninstall via Windows "Add/Remove Programs" with icon
+  - Registry entries for version tracking
+  - Optional launch after installation (launches via `launch.bat`)
+- Uninstaller Features:
+  - Always deletes log files (`%LOCALAPPDATA%\Abrechnung\logs\`)
+  - Optional deletion of database and application data (`%APPDATA%\Abrechnung\data\`)
+  - Configuration files are preserved (themes, languages, settings remain in `%APPDATA%\Abrechnung\`)
+- Configuration: `app/build-tools/windows/abrechnung.iss`
+- Output: `app/build/distributions/abrechnung-x.y.z-setup.exe`
+- CI/CD: Automatically built and attached to GitHub Releases via `workflow_dispatch` or tag push
+- Note: Shortcuts and launcher use `launch.bat` to ensure Windows Terminal is used
+
+**macOS Native Compilation:**
+- Native executable built with GraalVM native-image
+- Build: `./gradlew :app:nativeCompile` (same as Linux)
+- Output: `app/build/native/nativeCompile/abrechnung`
+- Cross-compilation not supported - must build on macOS for macOS
+- Binaries are unsigned (standard for open source projects)
+- First run: Users may need to right-click → "Open" to bypass Gatekeeper
+
+**CI/CD Native Builds:**
+- GitHub Actions workflow: `.github/workflows/build-native.yml`
+- Triggered on tag push (`v*`) or manual `workflow_dispatch`
+- Four parallel build jobs:
+  - **Linux x64**: `ubuntu-latest` runner → `abrechnung-linux-x64-{tag}.tar.gz`
+  - **Windows x64**: Self-hosted Windows runner → `abrechnung-setup-{tag}.exe`
+  - **macOS ARM64**: `macos-latest` runner (Apple Silicon) → `abrechnung-macos-arm64-{tag}.tar.gz`
+  - **macOS x64**: `macos-13` runner (Intel) → `abrechnung-macos-x64-{tag}.tar.gz`
+- All artifacts automatically attached to GitHub Releases
+
 **Database Options:**
 - Default: SQLite (embedded, zero-config)
+  - Stored in platform-specific data directory (see `getDataDir()` in Utilities)
+  - Windows: `%APPDATA%\Abrechnung\data\abrechnung.db`
+  - Linux: `~/.local/share/abrechnung/abrechnung.db`
+  - macOS: `~/Library/Application Support/Abrechnung/abrechnung.db`
 - Production: PostgreSQL (via `ABRECHNUNG_DB_URL`)
 - Migration path: Export/import utilities
+
+**Log Files:**
+- Platform-specific log directory (see `getLogDir()` in Utilities)
+- Windows: `%LOCALAPPDATA%\Abrechnung\logs\`
+- Linux: `~/.local/share/abrechnung/logs/`
+- macOS: `~/Library/Logs/Abrechnung/`
+- Files: `abrechnung.log`, `abrechnung-stdout.log`, `abrechnung-stderr.log`
+- **Log files are overwritten on each app launch** (no rotation/history)
+- Override location: `ABRECHNUNG_LOG_DIR` environment variable
 
 **Build Commands (via justfile):**
 - `just build` - Build shadow JAR

@@ -1,6 +1,6 @@
 # Abrechnung - Invoice Generator
 
-An intentionally lean Kotlin-based TUI application for generating invoices and sending them to customers.
+A Kotlin-based TUI application for generating invoices and sending them to customers.
 Designed for freelancers and small businesses, with a retro aesthetic.
 
 ![Main menu](./docs/img/abrechnung_main_menu_retro-glitch.png)
@@ -13,8 +13,8 @@ Designed for freelancers and small businesses, with a retro aesthetic.
 - **Recipient Management** - Register and update customer information
 - **Invoice Management** - Track and manage unpaid invoices
 - **Email Integration** - Send invoices directly via email
-- **Multi-language Support** - Output in any language, customizable
-- **Theme Customization** - Customizable color themes
+- **Multi-language Support** - [Output in any language, customizable](#language-structure)
+- **Theme Customization** - [Customizable color themes](#themes)
 
 ## Tech Stack
 
@@ -28,20 +28,19 @@ Designed for freelancers and small businesses, with a retro aesthetic.
 
 ## Requirements
 
+### If you download an executable from the [releases page](https://github.com/bernelius/abrechnung/releases)
+
+- Windows 10/11: You need to have Windows Terminal installed. This comes pre-installed with Windows 11, but might need to be installed separately for Windows 10.
+- Linux: Any terminal emulator
+- MacOS: Any terminal emulator
+- See [Running](#running) for instructions on how to run the program.
+
+### If you clone the repository
+
+- A terminal emulator
 - Java 24+
 - [Just](https://github.com/casey/just) (optional, but this readme's examples use it.)
-
-## Build
-
-```bash
-just build
-```
-
-## Run
-
-```bash
-just run
-```
+- See [Building](#building) and [Running](#running) for instructions.
 
 ## Configuration
 
@@ -136,7 +135,8 @@ Two built-in languages:
 
 ### Language Structure
 
-Languages are stored in `~/.config/abrechnung/languages/` as TOML files:
+Languages are stored in `~/.config/abrechnung/languages/` as TOML files.  
+On Windows, the config directory is located at `C:\Users\<username>\.config\abrechnung\languages\`
 
 The fields are used for the output invoice pdf.
 
@@ -205,12 +205,58 @@ To be fair, the output folder also contains the finished pdf files, where your b
 
 ## Database Options
 
-The default database is a local sqlite file, located at the root of the project.
-It is possible to supply your own database connection url if you want to use postgres instead.
+The default database is a local SQLite file, stored in a platform-specific data directory:
+
+| Operating System | Default Database Location                                |
+| ---------------- | -------------------------------------------------------- |
+| **Windows**      | `%APPDATA%\Abrechnung\data\abrechnung.db`                |
+| **Linux**        | `~/.local/share/abrechnung/abrechnung.db`                |
+| **MacOS**        | `~/Library/Application Support/Abrechnung/abrechnung.db` |
+
+You can override the data directory by setting the `ABRECHNUNG_DATA_DIR` environment variable.  
+It is possible to supply your own database connection url if you want to use postgres instead.  
 Set the `ABRECHNUNG_DB_URL` environment variable to your [jdbc formatted](https://jdbc.postgresql.org/documentation/use/) connection url, and off you go.  
-Note that you need to include the db username and password in this url.
+Note that you need to include the db username and password in this url.  
 There is an in-memory TTL cache (5 mins) and async requests wherever I found it sensible, so using an external database should introduce minimal friction even with high latency connections.
 
-## License
+## Building
+
+#### Build shadowJar
+
+```bash
+just build
+```
+
+#### Build native executable
+
+```bash
+just build-native
+```
+
+## Running
+
+### If you downloaded one of the releases
+
+- On Windows: Use the downloaded installer and run the shortcut from your start menu or desktop.
+- On Linux: Run the executable from the terminal.
+- On MacOS: Run the executable from the terminal.
+
+### If you cloned the repository
+
+#### Run shadowJar (after building it)
+
+```bash
+just run
+```
+
+#### Run native executable (after building it)
+
+```bash
+just run-native
+```
+
+See the [justfile](./justfile) for more commands.
+
+### License
 
 MIT

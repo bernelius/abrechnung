@@ -285,51 +285,11 @@ tasks.register("prepareWindowsResources") {
     }
 }
 
-// Create Windows shortcut (.lnk) using PowerShell
-tasks.register<Exec>("createWindowsShortcut") {
-    group = "build"
-    description = "Create Windows shortcut with embedded icon"
-    onlyIf { isWindows }
-    dependsOn("prepareWindowsResources")
-
-    val outputDir = layout.buildDirectory.dir("native/nativeCompile").get().asFile
-    workingDir = outputDir
-
-    commandLine(
-        "powershell.exe",
-        "-ExecutionPolicy", "Bypass",
-        "-File", file("build-tools/windows/create-shortcut.ps1").absolutePath
-    )
-
-    doFirst {
-        logger.lifecycle("Creating Windows shortcut...")
-    }
-
-    doLast {
-        logger.lifecycle("Windows shortcut created: ${outputDir.resolve("Abrechnung.lnk").absolutePath}")
-    }
-}
-
-// Copy .abrechnung marker file to native compile output
-tasks.register<Copy>("copyAbrechnungMarker") {
-    group = "build"
-    description = "Copy .abrechnung marker file to native compile output"
-
-    from("${project.rootDir}/.abrechnung")
-    into(layout.buildDirectory.dir("native/nativeCompile"))
-
-    doFirst {
-        logger.lifecycle("Copying .abrechnung marker file to build output...")
-    }
-}
-
 tasks.named("nativeCompile") {
     dependsOn("setupGraalVMCommunity")
 
-    finalizedBy("copyAbrechnungMarker")
-
     if (isWindows) {
-        finalizedBy("createWindowsShortcut")
+        finalizedBy("prepareWindowsResources")
     }
 }
 
@@ -338,6 +298,48 @@ tasks.register("buildNativeImage") {
     group = "build"
     description = "Build GraalVM native image"
     dependsOn("nativeCompile")
+}
+
+// Build installer using Inno Setup
+// Requires Inno Setup to be installed: https://jrsoftware.org/isinfo.php
+tasks.register<Exec>("buildInstaller") {
+    group = "build"
+    description = "Build Windows installer using Inno Setup"
+    onlyIf { isWindows }
+
+    dependsOn("nativeCompile")
+    dependsOn("prepareWindowsResources")
+
+    val outputDir = layout.buildDirectory.dir("native/nativeCompile").get().asFile
+    val buildToolsDir = file("build-tools/windows")
+    val distOutputDir = layout.buildDirectory.dir("distributions").get().asFile
+    val version = providers.gradleProperty("version").orElse("1.0.0").get()
+
+    inputs.files(
+        outputDir.resolve("abrechnung.exe"),
+        outputDir.resolve("launch.bat"),
+        outputDir.resolve("abrechnung_dllar_logo.ico"),
+        buildToolsDir.resolve("abrechnung.iss")
+    )
+    outputs.file(distOutputDir.resolve("abrechnung-setup-${version}.exe"))
+
+    // Inno Setup Compiler must be on PATH
+    commandLine(
+        "iscc",
+        "/DMyAppVersion=${version}",
+        "/DMyBuildDir=${outputDir.absolutePath}",
+        buildToolsDir.resolve("abrechnung.iss").absolutePath
+    )
+
+    doFirst {
+        logger.lifecycle("Building Windows installer for version $version")
+        logger.lifecycle("  Output: ${distOutputDir.resolve("abrechnung-setup-${version}.exe").absolutePath}")
+        distOutputDir.mkdirs()
+    }
+
+    doLast {
+        logger.lifecycle("Windows installer created successfully")
+    }
 }
 
 tasks {
