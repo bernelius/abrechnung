@@ -379,13 +379,19 @@ invoiceNumber = "Invoice Number"
 **Data Locations:**
 - Configuration: `$XDG_CONFIG_HOME/abrechnung/` (or `~/.config/abrechnung/`)
 - Database: Platform-specific data directory (see below), configurable via `ABRECHNUNG_DB_URL`
-- Output: `$PROJECT_ROOT/output/` (invoices directory)
+- Output: Platform-specific documents directory (see below), configurable via `ABRECHNUNG_OUTPUT_DIR`
 
 **Default Database Locations:**
 - Windows: `%APPDATA%\Abrechnung\data\abrechnung.db`
 - Linux: `~/.local/share/abrechnung/abrechnung.db`
 - macOS: `~/Library/Application Support/Abrechnung/abrechnung.db`
 - Override: Set `ABRECHNUNG_DATA_DIR` environment variable
+
+**Default Output Locations:**
+- Windows: `<localized Documents folder>\Abrechnung\` (auto-detects localized name like "Documents", "Dokumente", "Dokumenter")
+- Linux: `~/Documents/Abrechnung/`
+- macOS: `~/Documents/Abrechnung/`
+- Override: Set `ABRECHNUNG_OUTPUT_DIR` environment variable
 
 **Migration Strategy:**
 - Flyway for schema versioning

@@ -16,6 +16,7 @@ import com.bernelius.abrechnung.models.InvoiceItemDTO
 import com.bernelius.abrechnung.models.RecipientDTO
 import com.bernelius.abrechnung.repository.Repository
 import com.bernelius.abrechnung.utils.Outcome
+import com.bernelius.abrechnung.utils.getOutputDir
 import com.bernelius.abrechnung.utils.renderLogo
 import com.github.ajalt.mordant.rendering.TextAlign
 import com.github.ajalt.mordant.rendering.TextStyle
@@ -437,8 +438,10 @@ class InvoiceCreator(
             )
         }
 
-        val outputPath =
-            "output/invoice_${completeInvoice.id}_${completeInvoice.recipient.companyName}.pdf".replace(" ", "_")
+        val outputPath = getOutputDir()
+            .resolve("invoice_${completeInvoice.id}_${completeInvoice.recipient.companyName}.pdf")
+            .toString()
+            .replace(" ", "_")
 
         val me = writer.withLoading({ Repository.getUserConfig() }, message = "resolving identity")
         val result = invoiceToPDF(outputPath, me, completeInvoice)

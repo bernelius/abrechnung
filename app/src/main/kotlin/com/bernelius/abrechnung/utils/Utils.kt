@@ -163,3 +163,86 @@ fun getDataDir(): Path {
 
     return dataDir.toAbsolutePath()
 }
+
+/**
+ * Returns the platform-specific directory for invoice output (PDF files).
+ *
+ * Invoices are saved to:
+ * - Windows: <localized Documents folder>\Abrechnung\
+ * - Linux: ~/Documents/Abrechnung/
+ * - macOS: ~/Documents/Abrechnung/
+ *
+ * Can be overridden with ABRECHNUNG_OUTPUT_DIR environment variable.
+ *
+ * @throws IllegalStateException if the directory cannot be created
+ */
+fun getOutputDir(): Path {
+    // Check for environment variable override
+    System.getenv("ABRECHNUNG_OUTPUT_DIR")?.let {
+        val path = Path.of(it).toAbsolutePath()
+        path.toFile().mkdirs()
+        return path
+    }
+
+    val osName = System.getProperty("os.name").lowercase()
+    val outputDir = when {
+        osName.contains("win") -> {
+            // Query Windows registry for localized Documents folder path
+            // This handles non-English Windows versions correctly (e.g., "Dokumente" on German Windows)
+            val documentsPath = getWindowsDocumentsPath()
+            Path.of(documentsPath, "Abrechnung")
+        }
+        else -> {
+            // Linux and macOS - use standard Documents folder name
+            val home = System.getProperty("user.home")
+            Path.of(home, "Documents", "Abrechnung")
+        }
+    }
+
+    val outputDirFile = outputDir.toFile()
+    if (!outputDirFile.exists() && !outputDirFile.mkdirs()) {
+        throw IllegalStateException(
+            "Failed to create output directory: $outputDir\n" +
+                "Please ensure you have write permissions or set ABRECHNUNG_OUTPUT_DIR environment variable."
+        )
+    }
+
+    return outputDir.toAbsolutePath()
+}
+
+/**
+ * Queries the Windows registry to get the localized Documents folder path.
+ * Falls back to %USERPROFILE%\Documents if the registry query fails.
+ *
+ * @return The path to the user's Documents folder
+ */
+private fun getWindowsDocumentsPath(): String {
+    return try {
+        val process = ProcessBuilder(
+            "reg", "query",
+            "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
+            "/v", "personal"
+        ).start()
+
+        process.waitFor()
+        val output = process.inputStream.bufferedReader().readText()
+
+        // Parse the registry output to extract the path
+        // Format: HKEY_CURRENT_USER\...
+        //     personal    REG_SZ    C:\Users\username\Documents
+        val lines = output.lines()
+        val pathLine = lines.find { it.trim().startsWith("personal") }
+
+        // Split by whitespace and get the 4th element (the path)
+        // The line format is: personal    REG_SZ    <path>
+        val path = pathLine?.trim()?.split("\\s+".toRegex())?.drop(2)?.joinToString(" ")?.trim()
+
+        if (path.isNullOrBlank()) {
+            throw IllegalStateException("Could not parse Documents path from registry output")
+        }
+        path
+    } catch (e: Exception) {
+        // Fallback to user.home\Documents if registry query fails
+        System.getProperty("user.home") + "\\Documents"
+    }
+}

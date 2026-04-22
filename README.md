@@ -203,7 +203,9 @@ The app will use fallback defaults (`NotSecretKey0000` / `DefaultOpenSourceSalt`
 **If you care about a potential attacker having plain text access to your bank account number (no biggie?) and email password (potential biggie), set custom values**  
 To be fair, the output folder also contains the finished pdf files, where your bank account number is obviously visible in plain text.
 
-## Database Options
+## Data Locations
+
+### Database
 
 The default database is a local SQLite file, stored in a platform-specific data directory:
 
@@ -218,6 +220,19 @@ It is possible to supply your own database connection url if you want to use pos
 Set the `ABRECHNUNG_DB_URL` environment variable to your [jdbc formatted](https://jdbc.postgresql.org/documentation/use/) connection url, and off you go.  
 Note that you need to include the db username and password in this url.  
 There is an in-memory TTL cache (5 mins) and async requests wherever I found it sensible, so using an external database should introduce minimal friction even with high latency connections.
+
+### Invoice Output
+
+Generated PDF invoices are saved to a platform-specific documents directory:
+
+| Operating System | Default Output Location                                          |
+| ---------------- | ---------------------------------------------------------------- |
+| **Windows**      | `<localized Documents folder>\Abrechnung\` (e.g., `Documents`, `Dokumente`, `Dokumenter`) |
+| **Linux**        | `~/Documents/Abrechnung/`                                        |
+| **MacOS**        | `~/Documents/Abrechnung/`                                        |
+
+On Windows, the app automatically detects the localized name of your Documents folder (e.g., "Dokumente" on German Windows, "Dokumenter" on Norwegian Windows).  
+You can override the output directory by setting the `ABRECHNUNG_OUTPUT_DIR` environment variable.
 
 ## Building
 
