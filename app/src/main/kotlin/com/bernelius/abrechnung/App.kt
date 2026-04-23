@@ -38,6 +38,7 @@ import org.postgresql.util.PSQLException
 import org.sqlite.date.ExceptionUtils
 import java.io.FileOutputStream
 import java.io.PrintStream
+import kotlin.system.exitProcess
 
 data class StartupData(
     val overdueState: Boolean,
@@ -71,149 +72,153 @@ var terminalConfig = ConfigManager.loadConfig().terminalConfig
 
 
 suspend fun main() {
-    val ui = MordantUI()
+    try {
+        MordantUI().use { ui ->
+            /*
+            * a full day of trying to get logback to cooperate in graalVM on startup left me with no option but to brute force this stream redirection.
+            * not pretty, but it's better than getting spammed with log messages from hikari 
+            * (in stdout! what the crap... never found the root cause of this) when the app starts up.
+            * the shadowJar worked fine with the ui.withLoading() version, so it's still an option for non-graal builds.
+            * used to be ui.withLoading({ ...get all the lateinit vars... }) but now we do this instead.
+            *
+            * o beautiful spinner, thou shalt be missed.
+            *
+            * TODO: hack together a withloading version that also controls the output stream
+            */
 
-    /*
-    * a full day of trying to get logback to cooperate in graalVM on startup left me with no option but to brute force this stream redirection.
-    * not pretty, but it's better than getting spammed with log messages from hikari 
-    * (in stdout! what the crap... never found the root cause of this) when the app starts up.
-    * the shadowJar worked fine with the ui.withLoading() version, so it's still an option for non-graal builds.
-    * used to be ui.withLoading({ ...get all the lateinit vars... }) but now we do this instead.
-    *
-    * o beautiful spinner, thou shalt be missed.
-    *
-    * TODO: hack together a withloading version that also controls the output stream
-    */
-
-    var scene = MordantScene(ui).apply {
-        addRow(
-            Text("initializing..."),
-        )
-        display()
-    }
-    val originalOut = System.out
-    val originalErr = System.err
-    val logDir = getLogDir()
-    val logFile = FileOutputStream("$logDir/abrechnung-stdout.log", false)
-    System.setOut(PrintStream(logFile, true, "UTF-8"))
-    // IMPORTANT! This stays redirected forever
-    configureLogging()
-
-    val audioPlayer = CrossfadingAudioPlayer()
-
-    DatabaseFactory.init()
-    audioPlayer.start()
-    val startupData = loadStartupData()
-    val appScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    var mainSong = if (startupData.overdueState) Songs.FINSTERNIS else Songs.ABRECHNUNG
-    var credentialsConfig = startupData.credentialsConfig
-
-    val actions: Map<Char, suspend () -> Unit> =
-        mapOf(
-            'g' to {
-                InvoiceCreator(
-                    writer = ui,
-                    reader = ui,
-                    dateProvider = dateProvider,
-                    appScope = appScope
-                ).generateInvoice()
-            },
-            'm' to {
-                InvoiceManager(
-                    writer = ui,
-                    reader = ui,
-                    dateProvider = dateProvider,
-                    appScope = appScope,
-                ).listUnpaidInvoices()
-            },
-            'r' to { RecipientManager(writer = ui, reader = ui).registrationMenu() },
-            'u' to { RecipientManager(writer = ui, reader = ui).updateRecipientMenu() },
-            's' to {
-                audioPlayer.play(Songs.EINSTELLUNG)
-                SettingsManager(writer = ui, reader = ui, configManager = ConfigManager).mainMenu()
-            },
-            'c' to {
-                audioPlayer.play(Songs.EINSTELLUNG)
-                UserConfigManager(
-                    writer = ui,
-                    reader = ui,
-                    userConfig = credentialsConfig,
-                ).start()
-            },
-            'h' to {
-                audioPlayer.play(Songs.HILFE)
-                HelpScene(writer = ui, reader = ui).helpDisplay()
-            },
-            'q' to { exitProgram() },
-        )
-
-
-    val logo = renderLogo("Abrechnung?", fontName = th.primaryFont)
-    val logoWidth = logo.split("\n")[0].length
-
-    System.setOut(originalOut)
-
-    if (ui.size.width < logoWidth) {
-        scene.addRow("This terminal window is too small. There will be be problems with the output.")
-        scene.addRow(th.success("o) ") + "Okay. How bad could it be?")
-        scene.addRow(th.error("q) " + "Quit."))
-        scene.display()
-        val char = ui.getRawCharIn('o', 'q')
-        when (char) {
-            'o' -> scene.clear()
-            'q' -> exitProgram()
-        }
-    }
-
-    navigationLoop {
-        var scene = MordantScene(ui)
-
-        while (!credentialsConfig.isValid()) {
-            try {
-                HelpScene(writer = ui, reader = ui).helpDisplay(intro = true)
-            } catch (e: MordantUI.NavigationException) {
-                exitProgram()
+            var scene = MordantScene(ui).apply {
+                addRow(
+                    Text("initializing..."),
+                )
+                display()
             }
-            try {
-                credentialsConfig = UserConfigManager(
-                    writer = ui,
-                    reader = ui,
-                ).start(init = true)
-            } catch (e: MordantUI.NavigationException) {
-                exit()
+            val originalOut = System.out
+            val originalErr = System.err
+            val logDir = getLogDir()
+            val logFile = FileOutputStream("$logDir/abrechnung-stdout.log", false)
+            System.setOut(PrintStream(logFile, true, "UTF-8"))
+            // IMPORTANT! This stays redirected forever
+            configureLogging()
+
+            val audioPlayer = CrossfadingAudioPlayer()
+
+            DatabaseFactory.init()
+            audioPlayer.start()
+            val startupData = loadStartupData()
+            val appScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+            var mainSong = if (startupData.overdueState) Songs.FINSTERNIS else Songs.ABRECHNUNG
+            var credentialsConfig = startupData.credentialsConfig
+
+            val actions: Map<Char, suspend () -> Unit> =
+                mapOf(
+                    'g' to {
+                        InvoiceCreator(
+                            writer = ui,
+                            reader = ui,
+                            dateProvider = dateProvider,
+                            appScope = appScope
+                        ).generateInvoice()
+                    },
+                    'm' to {
+                        InvoiceManager(
+                            writer = ui,
+                            reader = ui,
+                            dateProvider = dateProvider,
+                            appScope = appScope,
+                        ).listUnpaidInvoices()
+                    },
+                    'r' to { RecipientManager(writer = ui, reader = ui).registrationMenu() },
+                    'u' to { RecipientManager(writer = ui, reader = ui).updateRecipientMenu() },
+                    's' to {
+                        audioPlayer.play(Songs.EINSTELLUNG)
+                        SettingsManager(writer = ui, reader = ui, configManager = ConfigManager).mainMenu()
+                    },
+                    'c' to {
+                        audioPlayer.play(Songs.EINSTELLUNG)
+                        UserConfigManager(
+                            writer = ui,
+                            reader = ui,
+                            userConfig = credentialsConfig,
+                        ).start()
+                    },
+                    'h' to {
+                        audioPlayer.play(Songs.HILFE)
+                        HelpScene(writer = ui, reader = ui).helpDisplay()
+                    },
+                    'q' to { exitProgram() },
+                )
+
+
+            val logo = renderLogo("Abrechnung?", fontName = th.primaryFont)
+            val logoWidth = logo.split("\n")[0].length
+
+            System.setOut(originalOut)
+
+            if (ui.size.width < logoWidth) {
+                scene.addRow("This terminal window is too small. There will be be problems with the output.")
+                scene.addRow(th.success("o) ") + "Okay. How bad could it be?")
+                scene.addRow(th.error("q) " + "Quit."))
+                scene.display()
+                val char = ui.getRawCharIn('o', 'q')
+                when (char) {
+                    'o' -> scene.clear()
+                    'q' -> exitProgram()
+                }
+            }
+
+            navigationLoop {
+                var scene = MordantScene(ui)
+
+                while (!credentialsConfig.isValid()) {
+                    try {
+                        HelpScene(writer = ui, reader = ui).helpDisplay(intro = true)
+                    } catch (e: ExitSignal) {
+                        exitProgram()
+                    }
+                    try {
+                        credentialsConfig = UserConfigManager(
+                            writer = ui,
+                            reader = ui,
+                        ).start(init = true)
+                    } catch (e: ExitSignal) {
+                        exit()
+                    }
+                }
+
+                audioPlayer.play(mainSong)
+                val menu =
+                    Panel(
+                        grid {
+                            stdMenuRow('g', "generate invoice")
+                            stdMenuRow('m', "manage unpaid invoices")
+                            stdMenuRow('r', "register new recipient")
+                            stdMenuRow('u', "update recipient information")
+                            stdMenuRow('c', "configuration of self")
+                            stdMenuRow('s', "app settings")
+                            stdMenuRow('h', "help")
+                            stdMenuRow('q', "quit", th.error)
+                        },
+                        title = Text(th.secondary("What do you want to do?")),
+                        padding = Padding(1, 3, 1, 3),
+                    )
+
+                val logoRow = scene.addRow(renderLogo("Abrechnung?", th.primary, th.primaryFont))
+                val menuRow = scene.addRow(menu)
+                scene.display()
+
+                try {
+                    val key: Char = ui.getRawCharIn(actions.keys)
+                    try {
+                        coroutineScope { actions[key]!!.invoke() }
+                    } catch (e: ExitSignal) {
+                    }
+                } catch (e: ExitSignal) {
+                    exit()
+                }
             }
         }
-
-        audioPlayer.play(mainSong)
-        val menu =
-            Panel(
-                grid {
-                    stdMenuRow('g', "generate invoice")
-                    stdMenuRow('m', "manage unpaid invoices")
-                    stdMenuRow('r', "register new recipient")
-                    stdMenuRow('u', "update recipient information")
-                    stdMenuRow('c', "configuration of self")
-                    stdMenuRow('s', "app settings")
-                    stdMenuRow('h', "help")
-                    stdMenuRow('q', "quit", th.error)
-                },
-                title = Text(th.secondary("What do you want to do?")),
-                padding = Padding(1, 3, 1, 3),
-            )
-
-        val logoRow = scene.addRow(renderLogo("Abrechnung?", th.primary, th.primaryFont))
-        val menuRow = scene.addRow(menu)
-        scene.display()
-
-        try {
-            val key: Char = ui.getRawCharIn(actions.keys)
-            try {
-                coroutineScope { actions[key]!!.invoke() }
-            } catch (e: MordantUI.NavigationException) {
-            }
-        } catch (e: MordantUI.NavigationException) {
-            exit()
-        }
+    } catch (_: ProgramExitSignal) {
+        exitProcess(0)
     }
 }

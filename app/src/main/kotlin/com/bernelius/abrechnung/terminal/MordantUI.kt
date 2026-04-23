@@ -1,6 +1,7 @@
 package com.bernelius.abrechnung.terminal
 
 import kotlinx.coroutines.*
+import com.bernelius.abrechnung.ExitSignal
 import com.github.ajalt.mordant.animation.textAnimation
 import com.bernelius.abrechnung.utils.ansiRegex
 import com.github.ajalt.mordant.input.coroutines.receiveKeyEventsFlow
@@ -313,7 +314,7 @@ class MordantUI(
                     .first()
                     { event ->
                         if (event.isCtrlC) {
-                            throw NavigationException()
+                            throw ExitSignal()
                         }
                         event.key == "Enter"
                     }
@@ -330,7 +331,7 @@ class MordantUI(
                     .receiveKeyEventsFlow()
                     .mapNotNull { event ->
                         if (event.isCtrlC) {
-                            throw NavigationException()
+                            throw ExitSignal()
                         }
                         if (event.key.length == 1) {
                             val c = event.key.first()
@@ -342,8 +343,6 @@ class MordantUI(
             }
         return key
     }
-
-    class NavigationException : Exception()
 
     override fun readAndCenter(
         prefill: String,
@@ -378,7 +377,7 @@ class MordantUI(
                     t.receiveKeyEventsFlow().first()
                 }
                 if (event.isCtrlC) {
-                    throw NavigationException()
+                    throw ExitSignal()
                 }
                 when (val key = event.key) {
                     "Enter" -> {

@@ -1,5 +1,6 @@
 package com.bernelius.abrechnung.utils
 
+import com.bernelius.abrechnung.ProgramExitSignal
 import com.bernelius.abrechnung.cache.InvoiceCache
 import com.bernelius.abrechnung.cache.RecipientCache
 import com.bernelius.abrechnung.cache.UserConfigCache
@@ -53,7 +54,7 @@ fun exitProgram() {
     RecipientCache.invalidateAll()
     InvoiceCache.invalidateAll()
     UserConfigCache.invalidateAll()
-    kotlin.system.exitProcess(0)
+    throw ProgramExitSignal()
 }
 
 /**

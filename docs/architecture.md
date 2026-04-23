@@ -113,7 +113,7 @@ The application follows a layered architecture pattern:
 - Input/output handling
 - Terminal size detection
 - Loading states with async operations
-- Navigation exception system
+- Control flow signal system (ControlFlowSignal hierarchy for non-local returns)
 - Input validation helpers
 
 **Scene Managers:**
@@ -527,6 +527,14 @@ invoiceNumber = "Invoice Number"
 - `coroutineScope` for structured concurrency
 - `suspendTransaction` for async database operations
 - Exception propagation and recovery
+
+**Control Flow Signals:**
+The application uses a signal-based approach for non-local control flow (scene navigation, program exit):
+- `ControlFlowSignal`: Abstract base class extending `Exception` (skips stack trace generation for performance)
+- `ExitSignal`: Exits current scene/navigation level (e.g., user presses Ctrl+C)
+- `ProgramExitSignal`: Terminates the entire application cleanly
+
+This pattern allows deep input handling code to unwind back to appropriate handlers without threading signal parameters through every function signature. Signals are caught at semantic boundaries (menu loops, main entry) where decisions are made.
 
 ## Extension Points
 
