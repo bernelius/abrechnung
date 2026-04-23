@@ -83,10 +83,12 @@ fun getLogDir(): Path {
                 ?: throw IllegalStateException("LOCALAPPDATA environment variable not set")
             Path.of(localAppData, "Abrechnung", "logs")
         }
+
         osName.contains("mac") -> {
             val home = System.getProperty("user.home")
             Path.of(home, "Library", "Logs", "Abrechnung")
         }
+
         else -> {
             // Linux and other Unix-like systems
             val xdgDataHome = System.getenv("XDG_DATA_HOME")
@@ -103,7 +105,7 @@ fun getLogDir(): Path {
     if (!logDirFile.exists() && !logDirFile.mkdirs()) {
         throw IllegalStateException(
             "Failed to create log directory: $logDir\n" +
-                "Please ensure you have write permissions or set ABRECHNUNG_LOG_DIR environment variable."
+                    "Please ensure you have write permissions or set ABRECHNUNG_LOG_DIR environment variable."
         )
     }
 
@@ -137,10 +139,12 @@ fun getDataDir(): Path {
                 ?: throw IllegalStateException("APPDATA environment variable not set")
             Path.of(appData, "Abrechnung", "data")
         }
+
         osName.contains("mac") -> {
             val home = System.getProperty("user.home")
             Path.of(home, "Library", "Application Support", "Abrechnung")
         }
+
         else -> {
             // Linux and other Unix-like systems
             val xdgDataHome = System.getenv("XDG_DATA_HOME")
@@ -157,7 +161,7 @@ fun getDataDir(): Path {
     if (!dataDirFile.exists() && !dataDirFile.mkdirs()) {
         throw IllegalStateException(
             "Failed to create data directory: $dataDir\n" +
-                "Please ensure you have write permissions or set ABRECHNUNG_DATA_DIR environment variable."
+                    "Please ensure you have write permissions or set ABRECHNUNG_DATA_DIR environment variable."
         )
     }
 
@@ -169,7 +173,7 @@ fun getDataDir(): Path {
  *
  * Invoices are saved to:
  * - Windows: <localized Documents folder>\Abrechnung\
- * - Linux: ~/Documents/Abrechnung/
+ * - Linux: <xdg-user-dir DOCUMENTS>/Abrechnung/
  * - macOS: ~/Documents/Abrechnung/
  *
  * Can be overridden with ABRECHNUNG_OUTPUT_DIR environment variable.
@@ -188,14 +192,21 @@ fun getOutputDir(): Path {
     val outputDir = when {
         osName.contains("win") -> {
             // Query Windows registry for localized Documents folder path
-            // This handles non-English Windows versions correctly (e.g., "Dokumente" on German Windows)
-            val documentsPath = getWindowsDocumentsPath()
-            Path.of(documentsPath, "Abrechnung")
+            val path = getWindowsDocumentsPath()
+            path.resolve("Abrechnung")
         }
-        else -> {
-            // Linux and macOS - use standard Documents folder name
+
+        osName.contains("mac") -> {
+            // macOS - use standard Documents folder name
             val home = System.getProperty("user.home")
             Path.of(home, "Documents", "Abrechnung")
+        }
+
+        else -> {
+            // Linux - use xdg-user-dir DOCUMENTS or fall back to Documents
+            val home = System.getProperty("user.home")
+            val path = getLinuxDocumentsPath(home)
+            path.resolve("Abrechnung")
         }
     }
 
@@ -203,11 +214,24 @@ fun getOutputDir(): Path {
     if (!outputDirFile.exists() && !outputDirFile.mkdirs()) {
         throw IllegalStateException(
             "Failed to create output directory: $outputDir\n" +
-                "Please ensure you have write permissions or set ABRECHNUNG_OUTPUT_DIR environment variable."
+                    "Please ensure you have write permissions or set ABRECHNUNG_OUTPUT_DIR environment variable."
         )
     }
 
     return outputDir.toAbsolutePath()
+}
+
+
+fun getLinuxDocumentsPath(userHome: String): Path {
+    val process = ProcessBuilder(
+        "xdg-user-dir", "DOCUMENTS"
+    ).start()
+
+    process.waitFor()
+    val output = process.inputStream.bufferedReader().readText().trim()
+    if (output.isBlank() || output == userHome || output.contains("not found", ignoreCase = true))
+        return Path.of(userHome, "Documents")
+    return Path.of(output)
 }
 
 /**
@@ -216,7 +240,7 @@ fun getOutputDir(): Path {
  *
  * @return The path to the user's Documents folder
  */
-private fun getWindowsDocumentsPath(): String {
+private fun getWindowsDocumentsPath(): Path {
     return try {
         val process = ProcessBuilder(
             "reg", "query",
@@ -240,9 +264,9 @@ private fun getWindowsDocumentsPath(): String {
         if (path.isNullOrBlank()) {
             throw IllegalStateException("Could not parse Documents path from registry output")
         }
-        path
+        Path.of(path)
     } catch (e: Exception) {
         // Fallback to user.home\Documents if registry query fails
-        System.getProperty("user.home") + "\\Documents"
+        Path.of(System.getProperty("user.home"), "Documents")
     }
 }

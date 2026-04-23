@@ -275,6 +275,11 @@ The `Repository` object is a singleton that provides all data access operations:
   - Linux: `~/.local/share/abrechnung/`
   - macOS: `~/Library/Application Support/Abrechnung/`
   - Override: `ABRECHNUNG_DATA_DIR` environment variable
+- **Output Directory**: Platform-specific invoice output location (`getOutputDir()`)
+  - Windows: `<localized Documents folder>\Abrechnung\` (queries registry for localized name)
+  - Linux: `<xdg-user-dir DOCUMENTS>/Abrechnung/` (uses XDG user directories, falls back to `~/Documents/Abrechnung/`)
+  - macOS: `~/Documents/Abrechnung/`
+  - Override: `ABRECHNUNG_OUTPUT_DIR` environment variable
 
 ## Build System
 
@@ -388,8 +393,8 @@ invoiceNumber = "Invoice Number"
 - Override: Set `ABRECHNUNG_DATA_DIR` environment variable
 
 **Default Output Locations:**
-- Windows: `<localized Documents folder>\Abrechnung\` (auto-detects localized name like "Documents", "Dokumente", "Dokumenter")
-- Linux: `~/Documents/Abrechnung/`
+- Windows: `<localized Documents folder>\Abrechnung\` (auto-detects localized name like "Documents", "Dokumente", "Dokumenter" via registry query)
+- Linux: `<xdg-user-dir DOCUMENTS>/Abrechnung/` (uses `xdg-user-dir` command to get localized Documents path, falls back to `~/Documents/Abrechnung/` if not available)
 - macOS: `~/Documents/Abrechnung/`
 - Override: Set `ABRECHNUNG_OUTPUT_DIR` environment variable
 

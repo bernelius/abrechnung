@@ -228,10 +228,11 @@ Generated PDF invoices are saved to a platform-specific documents directory:
 | Operating System | Default Output Location                                          |
 | ---------------- | ---------------------------------------------------------------- |
 | **Windows**      | `<localized Documents folder>\Abrechnung\` (e.g., `Documents`, `Dokumente`, `Dokumenter`) |
-| **Linux**        | `~/Documents/Abrechnung/`                                        |
+| **Linux**        | `<xdg-user-dir DOCUMENTS>/Abrechnung/` (uses XDG user directories, falls back to `~/Documents/Abrechnung/`) |
 | **MacOS**        | `~/Documents/Abrechnung/`                                        |
 
 On Windows, the app automatically detects the localized name of your Documents folder (e.g., "Dokumente" on German Windows, "Dokumenter" on Norwegian Windows).  
+On Linux, the app uses the `xdg-user-dir` command to get the localized Documents path, falling back to `~/Documents/Abrechnung/` if not available.  
 You can override the output directory by setting the `ABRECHNUNG_OUTPUT_DIR` environment variable.
 
 ## Building
