@@ -3,6 +3,7 @@ package com.bernelius.abrechnung.config
 import com.akuleshov7.ktoml.Toml
 import com.akuleshov7.ktoml.TomlInputConfig
 import com.akuleshov7.ktoml.TomlOutputConfig
+import com.akuleshov7.ktoml.annotations.TomlComments
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.serializer
@@ -96,24 +97,43 @@ data class UserConfig(
 
 @Serializable
 data class TerminalConfig(
-    var theme: String,
+    var theme: String = builtinThemes.first().name,
+    @TomlComments(
+        "outerHotkeys:",
+        "places the visual indicators for the hotkeys outside the text",
+        "purely cosmetic. Default: true"
+    )
     var outerHotkeys: Boolean = true,
+    @TomlComments(
+        "enableExternalEditor:",
+        "uses the EDITOR environment variable to open the current buffer in an external",
+        "editor, useful for multiline fields like email body",
+        "available by pressing Ctrl+E during most text editing tasks.",
+        "default: false"
+    )
+    var enableExternalEditor: Boolean = false,
 )
-// val primaryFigFont: String = "Big Money-ne",
-// val secondaryFigFont: String = "RubiFont",
 
 @Serializable
 data class InvoiceConfig(
-    // dueDateOffset: default due date for new invoices, measured in days from invoice date
-    // the default of 14 days means that the due date will be two weeks from whatever
-    // date is set as the invoice date (usually the current date)
+    @TomlComments(
+        "dueDateOffset: default due date for new invoices, measured in days from invoice date",
+        "the default of 14 days means that the due date will be two weeks from whatever",
+        "date is set as the invoice date (usually the current date)",
+    )
     val dueDateOffset: Int = 14,
-    // vatRate: default vat rate on new invoices, in percent
+    @TomlComments(
+        "vatRate: default vat rate on new invoices, in percent",
+    )
     val vatRate: Int = 0,
-    // currency: currency to use for invoices
+    @TomlComments(
+        "currency: currency to use for invoices",
+    )
     val currency: String = "NOK",
-    // language: the language to display on the invoice
-    // You can define your own language by copying the en.toml file
-    // contained in the languages folder and modifying the words.
-    val language: String = "en",
+    @TomlComments(
+        "language: the language to display on the invoice",
+        "You can define your own language by copying the en.toml file",
+        "contained in the languages folder and modifying the words.",
+    )
+    val language: String = builtinLanguages.first().name,
 )

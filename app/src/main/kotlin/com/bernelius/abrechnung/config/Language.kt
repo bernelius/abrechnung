@@ -1,5 +1,6 @@
 package com.bernelius.abrechnung.config
 
+import com.akuleshov7.ktoml.annotations.TomlComments
 import com.bernelius.abrechnung.models.DatePattern
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -31,10 +32,13 @@ data class Language(
     val billTo: String,
     val invoiceNumber: String,
     val invoiceDate: String,
-    // datePattern: the date pattern to use for the invoice date.
-    // The default is dd.MM.yyyy, which means day, month, year, in that order.
-    // If you use an invalid date pattern, the app will warn you on startup.
-    // see https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html
+    @TomlComments(
+        "datePattern: the date pattern to use for the invoice date.",
+        "example: dd.MM.yyyy means day, month, year, in that order, which would translate to 15.02.2024 for 15th of February 2024.",
+        "example2: yyyy/MM/dd would translate to 2024/02/15 for 15th of February 2024.",
+        "If you use an invalid date pattern, the app will warn you on startup.",
+        "see https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html for specifics",
+    )
     val datePattern: DatePattern,
     val dueDate: String,
     val description: String,
