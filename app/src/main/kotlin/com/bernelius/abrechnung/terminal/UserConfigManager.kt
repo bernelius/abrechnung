@@ -1,6 +1,7 @@
 package com.bernelius.abrechnung.terminal
 
 import com.bernelius.abrechnung.cache.UserConfigCache
+import com.bernelius.abrechnung.mail.verifyEmailConfig
 import com.bernelius.abrechnung.models.UserConfigDTO
 import com.bernelius.abrechnung.models.isNotBlank
 import com.bernelius.abrechnung.repository.Repository
@@ -10,10 +11,13 @@ import com.github.ajalt.mordant.rendering.TextAlign
 import com.github.ajalt.mordant.rendering.Widget
 import com.github.ajalt.mordant.table.ColumnWidth
 import com.github.ajalt.mordant.table.grid
+import com.github.ajalt.mordant.table.horizontalLayout
+import com.github.ajalt.mordant.table.verticalLayout
 import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import com.bernelius.abrechnung.theme.Theme as th
 
@@ -168,7 +172,7 @@ class UserConfigManager(
                 val passwordString = if (user.emailPassword != null) "Password registered" else ""
                 row("${emailPasswordBind}e-mail passwd:", passwordString)
             }
-        val title =
+        val bottomTitle =
             th.success("w) ") +
                     "Write (save) changes" +
                     if (noCancel) {
@@ -177,13 +181,21 @@ class UserConfigManager(
                         th.secondary(" / ") +
                                 th.error("c) ") +
                                 "Cancel"
+                    } +
+                    if (userConfig.emailSemanticallyValid()) {
+                        th.secondary(" / ") +
+                                th.dim("v) ") +
+                                "Check email"
+                    } else {
+                        ""
                     }
+
         return Panel(
             theGrid,
             borderStyle = th.secondary,
             bottomTitle =
                 Text(
-                    title,
+                    bottomTitle,
                 ),
             bottomTitleAlign = TextAlign.RIGHT,
         )
@@ -200,7 +212,7 @@ class UserConfigManager(
             } else {
                 { linearUserConfigGrid(userConfig) }
             }
-        val message = "What is your email password"
+        val message = "What is your email password?"
         var varMsg = message
         while (true) {
             var emailPassword =
@@ -454,13 +466,14 @@ class UserConfigManager(
     }
 
     private suspend fun mainMenu(): UserConfigDTO {
-        val scene = MordantScene(writer)
-        scene.addRow(renderLogo("Konfiguration"))
+        val scene = MordantScene(writer).apply {
+            addRow(renderLogo("Konfiguration"))
+        }
         var grid = userConfigGrid(userConfig)
         val idx = scene.addRow(grid)
 
-        scene.display()
         navigationLoop {
+            scene.display()
             val actions: Map<Char, suspend () -> Unit> =
                 mapOf(
                     'n' to { changeCompanyName(scene, idx, keybinds = true) },
@@ -473,6 +486,25 @@ class UserConfigManager(
                     'm' to { changeSmtpPort(scene, idx, keybinds = true) },
                     't' to { changeSmtpUser(scene, idx, keybinds = true) },
                     'p' to { doubleValidatePassword(scene, idx, keybinds = true) },
+                    'v' to {
+                        if (userConfig.emailSemanticallyValid()) {
+                            val emailConfig = userConfig.toEmailUserDTO()
+
+                            val emailCredentialsOutcome =
+                                writer.withLoading({ verifyEmailConfig(emailConfig, timeout = 10) })
+                            MordantScene(writer).apply {
+                                if (emailCredentialsOutcome is Outcome.Success)
+                                    addRow(th.success("Email credentials valid! Contact established with your email provider."))
+                                else if (emailCredentialsOutcome is Outcome.Error)
+                                    addRow(("Error validating email credentials: ${emailCredentialsOutcome.message}"))
+                                addRow(th.secondary("Press enter to continue..."))
+                                display()
+                            }
+                            reader.waitForEnter()
+                            scene.replaceRow(idx, userConfigGrid(userConfig))
+                            scene.display()
+                        }
+                    },
                     'w' to {
                         val outcome = saveUserConfig()
                         if (outcome is Outcome.Error) {

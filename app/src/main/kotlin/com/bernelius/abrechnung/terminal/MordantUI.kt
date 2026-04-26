@@ -445,10 +445,11 @@ class MordantUI(
         val start = System.currentTimeMillis()
         val minSpinnerDelay = 50L
         val animationDelay = 60L
+        //we wait timeToWait ms no matter what. The spinner will appear only after minSpinnerDelay.
         var timeToWait = 10L
-//we wait timeToWait ms no matter what. The spinner will appear only after minSpinnerDelay.
 
         var frameIndex = 0
+        // TODO: finish the nullable message functionality
         var needToPrintPanel = if (message != null) true else false
         while (!deferredBlock.isCompleted) {
             if (System.currentTimeMillis() - start >= minSpinnerDelay) {

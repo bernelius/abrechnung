@@ -15,6 +15,7 @@ import jakarta.mail.internet.MimeMultipart
 import java.io.File
 import java.util.Properties
 
+
 fun sendMail(
     from: EmailUserDTO,
     attachment: String,
@@ -37,7 +38,8 @@ fun sendMail(
             Session.getInstance(
                 props,
                 object : Authenticator() {
-                    override fun getPasswordAuthentication(): PasswordAuthentication = PasswordAuthentication(myEmail, myPassword)
+                    override fun getPasswordAuthentication(): PasswordAuthentication =
+                        PasswordAuthentication(myEmail, myPassword)
                 },
             )
 

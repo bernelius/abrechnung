@@ -69,6 +69,20 @@ data class UserConfigDTO(
                 email.contains("@") &&
                 accountNumber.isNotBlank()
     }
+
+    fun emailSemanticallyValid(): Boolean {
+        return (!smtpHost.isNullOrBlank() && !smtpPort.isNullOrBlank() && !smtpUser.isNullOrBlank() && emailPassword != null)
+    }
+
+    fun toEmailUserDTO(): EmailUserDTO {
+        if (!emailSemanticallyValid()) throw IllegalStateException("Email credentials are not valid")
+        return EmailUserDTO(
+            email = smtpUser ?: email,
+            password = emailPassword!!,
+            host = smtpHost!!,
+            port = smtpPort!!.toInt(),
+        )
+    }
 }
 
 data class RecipientDTO(
