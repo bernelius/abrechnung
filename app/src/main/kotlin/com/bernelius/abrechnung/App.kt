@@ -97,12 +97,17 @@ suspend fun main() {
             val logDir = getLogDir()
             val logFile = FileOutputStream("$logDir/abrechnung-stdout.log", false)
             System.setOut(PrintStream(logFile, true, "UTF-8"))
-            // IMPORTANT! This stays redirected forever
             configureLogging()
 
             val audioPlayer = CrossfadingAudioPlayer()
 
-            DatabaseFactory.init()
+            try {
+                DatabaseFactory.init()
+            } catch (e: PSQLException) {
+                System.setErr(originalErr)
+                System.err.println("Could not connect to database. Please check your configuration.")
+                exitProcess(1)
+            }
             audioPlayer.start()
             val startupData = loadStartupData()
             val appScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
