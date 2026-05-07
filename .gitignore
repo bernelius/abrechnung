@@ -6,7 +6,7 @@ build
 
 abrechnung.db
 *.log
-
+.idea/
 .settings/
 bin/
 .classpath

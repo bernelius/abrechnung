@@ -17,7 +17,6 @@ import java.util.Properties
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-
 fun sendMail(
     from: EmailUserDTO,
     attachment: String,
@@ -45,8 +44,7 @@ fun sendMail(
             Session.getInstance(
                 props,
                 object : Authenticator() {
-                    override fun getPasswordAuthentication(): PasswordAuthentication =
-                        PasswordAuthentication(myEmail, myPassword)
+                    override fun getPasswordAuthentication(): PasswordAuthentication = PasswordAuthentication(myEmail, myPassword)
                 },
             )
 

@@ -21,58 +21,61 @@ class CacheTest {
     }
 
     @Test
-    fun `returns cached value within TTL`() = runBlocking {
-        var fetchCount = 0
-        RecipientCache.getOrFetch("testKey") {
-            fetchCount++
-            emptyList<com.bernelius.abrechnung.models.RecipientDTO>()
-        }
+    fun `returns cached value within TTL`() =
+        runBlocking {
+            var fetchCount = 0
+            RecipientCache.getOrFetch("testKey") {
+                fetchCount++
+                emptyList<com.bernelius.abrechnung.models.RecipientDTO>()
+            }
 
-        RecipientCache.getOrFetch("testKey") {
-            fetchCount++
-            emptyList<com.bernelius.abrechnung.models.RecipientDTO>()
-        }
+            RecipientCache.getOrFetch("testKey") {
+                fetchCount++
+                emptyList<com.bernelius.abrechnung.models.RecipientDTO>()
+            }
 
-        assertEquals(1, fetchCount)
-    }
+            assertEquals(1, fetchCount)
+        }
 
     @Test
-    fun `returns fresh value after TTL`() = runBlocking<Unit> {
-        val cache = TtlCache<String, String>(ttlMillis = 50)
-        var fetchCount = 0
+    fun `returns fresh value after TTL`() =
+        runBlocking<Unit> {
+            val cache = TtlCache<String, String>(ttlMillis = 50)
+            var fetchCount = 0
 
-        cache.getOrFetch("key") {
-            fetchCount++
-            "first"
+            cache.getOrFetch("key") {
+                fetchCount++
+                "first"
+            }
+
+            delay(60)
+
+            cache.getOrFetch("key") {
+                fetchCount++
+                "second"
+            }
+
+            assertEquals(2, fetchCount)
         }
-
-        delay(60)
-
-        cache.getOrFetch("key") {
-            fetchCount++
-            "second"
-        }
-
-        assertEquals(2, fetchCount)
-    }
 
     @Test
-    fun `invalidate clears specific key`() = runBlocking<Unit> {
-        var fetchCount = 0
-        RecipientCache.getOrFetch("invalidateTest") {
-            fetchCount++
-            emptyList<com.bernelius.abrechnung.models.RecipientDTO>()
+    fun `invalidate clears specific key`() =
+        runBlocking<Unit> {
+            var fetchCount = 0
+            RecipientCache.getOrFetch("invalidateTest") {
+                fetchCount++
+                emptyList<com.bernelius.abrechnung.models.RecipientDTO>()
+            }
+
+            RecipientCache.invalidate("invalidateTest")
+
+            RecipientCache.getOrFetch("invalidateTest") {
+                fetchCount++
+                emptyList<com.bernelius.abrechnung.models.RecipientDTO>()
+            }
+
+            assertEquals(2, fetchCount)
         }
-
-        RecipientCache.invalidate("invalidateTest")
-
-        RecipientCache.getOrFetch("invalidateTest") {
-            fetchCount++
-            emptyList<com.bernelius.abrechnung.models.RecipientDTO>()
-        }
-
-        assertEquals(2, fetchCount)
-    }
 
     @Test
     fun `isFresh returns false for non-existent key`() {
@@ -80,14 +83,15 @@ class CacheTest {
     }
 
     @Test
-    fun `invalidateAll clears all entries`() = runBlocking<Unit> {
-        RecipientCache.getOrFetch("all") { 
-            listOf<com.bernelius.abrechnung.models.RecipientDTO>() 
+    fun `invalidateAll clears all entries`() =
+        runBlocking<Unit> {
+            RecipientCache.getOrFetch("all") {
+                listOf<com.bernelius.abrechnung.models.RecipientDTO>()
+            }
+            assertTrue(RecipientCache.isFresh("all"))
+
+            RecipientCache.invalidateAll()
+
+            assertFalse(RecipientCache.isFresh("all"))
         }
-        assertTrue(RecipientCache.isFresh("all"))
-
-        RecipientCache.invalidateAll()
-
-        assertFalse(RecipientCache.isFresh("all"))
-    }
 }

@@ -14,20 +14,18 @@ data class VatDateConfigDTO(
     var invoiceDateOffset: Long = 0,
     var dueDateOffset: Long,
 ) {
-    fun resolve(today: LocalDate): VatDateResolvedDTO {
-        return VatDateResolvedDTO(
+    fun resolve(today: LocalDate): VatDateResolvedDTO =
+        VatDateResolvedDTO(
             vatRate = vatRate,
             invoiceDate = today.plusDays(invoiceDateOffset),
             dueDate = today.plusDays(invoiceDateOffset).plusDays(dueDateOffset),
         )
-    }
 
     companion object {
         val vatRateValidators = arrayOf(isBlankOrIntegerBetweenZeroAndHundred)
         val invoiceDateOffsetValidators = arrayOf(isBlankOrPositiveInteger)
         val dueDateOffsetValidators = arrayOf(isBlankOrPositiveInteger)
     }
-
 }
 
 data class EmailUserDTO(
@@ -62,17 +60,15 @@ data class UserConfigDTO(
         val emailPasswordValidators = emptyArray<Validator>()
     }
 
-    fun isValid(): Boolean {
-        return name.isNotBlank() &&
-                address.isNotBlank() &&
-                postal.isNotBlank() &&
-                email.contains("@") &&
-                accountNumber.isNotBlank()
-    }
+    fun isValid(): Boolean =
+        name.isNotBlank() &&
+            address.isNotBlank() &&
+            postal.isNotBlank() &&
+            email.contains("@") &&
+            accountNumber.isNotBlank()
 
-    fun emailSemanticallyValid(): Boolean {
-        return (!smtpHost.isNullOrBlank() && !smtpPort.isNullOrBlank() && !smtpUser.isNullOrBlank() && emailPassword != null)
-    }
+    fun emailSemanticallyValid(): Boolean =
+        (!smtpHost.isNullOrBlank() && !smtpPort.isNullOrBlank() && !smtpUser.isNullOrBlank() && emailPassword != null)
 
     fun toEmailUserDTO(): EmailUserDTO {
         if (!emailSemanticallyValid()) throw IllegalStateException("Email credentials are not valid")
@@ -161,10 +157,10 @@ data class InvoiceItemDTO(
     val subtotal: Double
         get() =
             quantity *
-                    (unitPrice - unitPrice * (discount.toDouble() / 100))
-                        .toBigDecimal()
-                        .setScale(2, RoundingMode.HALF_UP)
-                        .toDouble()
+                (unitPrice - unitPrice * (discount.toDouble() / 100))
+                    .toBigDecimal()
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .toDouble()
 
     companion object {
         val descriptionValidators =

@@ -62,9 +62,9 @@ object Repository {
             insertedId
         }
 
-
     suspend fun findInvoiceById(invoiceId: Int): InvoiceDTO? =
-        InvoiceCache.getOrFetch("all") { fetchAllInvoicesFromDb() }
+        InvoiceCache
+            .getOrFetch("all") { fetchAllInvoicesFromDb() }
             .find { it.id == invoiceId }
 
     suspend fun deleteInvoice(invoiceId: Int) {
@@ -101,7 +101,8 @@ object Repository {
         filter: String?,
         negate: Boolean = false,
     ): List<InvoiceDTO> =
-        InvoiceCache.getOrFetch("all") { fetchAllInvoicesFromDb() }
+        InvoiceCache
+            .getOrFetch("all") { fetchAllInvoicesFromDb() }
             .let { allInvoices ->
                 when {
                     filter.isNullOrEmpty() -> allInvoices
@@ -111,9 +112,9 @@ object Repository {
             }
 
     /*
-    * fetch all invoices from db
-    * order by dueDate
-    */
+     * fetch all invoices from db
+     * order by dueDate
+     */
     private suspend fun fetchAllInvoicesFromDb(): List<InvoiceDTO> =
         suspendTransaction {
             val invoiceRows = InvoicesTable.selectAll().orderBy(InvoicesTable.dueDate).toList()
@@ -174,14 +175,14 @@ object Repository {
         }
 
     suspend fun findRecipientByIdOrNull(recipientId: Int): RecipientDTO? =
-        RecipientCache.getOrFetch("all") { fetchAllRecipientsFromDb() }
+        RecipientCache
+            .getOrFetch("all") { fetchAllRecipientsFromDb() }
             .find { it.id == recipientId }
 
     suspend fun findRecipientById(recipientId: Int): RecipientDTO =
         findRecipientByIdOrNull(recipientId) ?: error("Recipient $recipientId not found")
 
-    suspend fun findAllRecipientsSortFrequency(): List<RecipientDTO> =
-        RecipientCache.getOrFetch("all") { fetchAllRecipientsSortedFromDb() }
+    suspend fun findAllRecipientsSortFrequency(): List<RecipientDTO> = RecipientCache.getOrFetch("all") { fetchAllRecipientsSortedFromDb() }
 
     private suspend fun fetchAllRecipientsSortedFromDb(): List<RecipientDTO> =
         suspendTransaction {

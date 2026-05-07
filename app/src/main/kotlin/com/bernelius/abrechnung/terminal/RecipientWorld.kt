@@ -48,7 +48,6 @@ fun singleRecipientGrid(
 
 val recipientLogos = listOf("Das Subjekt", "Empfaengerwelt", "Kundenreich")
 
-
 class RecipientManager(
     private val writer: Writer,
     private val reader: InputReader,
@@ -57,17 +56,14 @@ class RecipientManager(
 
     var recipient = RecipientDTO()
 
-    suspend fun getAllRecipients(): List<RecipientDTO> {
-        return writer.withLoading({ Repository.findAllRecipientsSortFrequency() }, message = "fetching recipients")
-    }
+    suspend fun getAllRecipients(): List<RecipientDTO> =
+        writer.withLoading({
+            Repository.findAllRecipientsSortFrequency()
+        }, message = "fetching recipients")
 
-    fun getAllRecipientNames(): Set<String> {
-        return allRecipients.map { it.companyName.lowercase() }.toSet()
-    }
+    fun getAllRecipientNames(): Set<String> = allRecipients.map { it.companyName.lowercase() }.toSet()
 
-    fun getAllOrgNumbers(): Set<String?> {
-        return allRecipients.map { it.orgNumber?.lowercase() }.toSet()
-    }
+    fun getAllOrgNumbers(): Set<String?> = allRecipients.map { it.orgNumber?.lowercase() }.toSet()
 
     fun changeCompanyName(
         scene: Scene,
@@ -168,7 +164,6 @@ class RecipientManager(
         var scene = MordantScene(writer)
         scene.addRow(renderLogo(recipientLogos.random(), fontName = th.secondaryFont, style = th.primary))
 
-
         var grid = singleRecipientGrid(recipient)
 
         val idx = scene.addRow(grid)
@@ -197,12 +192,12 @@ class RecipientManager(
                     try {
                         writer.withLoading(
                             { addRecipientWithCacheUpdate(recipient) },
-                            message = "saving recipient"
+                            message = "saving recipient",
                         )
                         return exitToMainMenu(
                             writer,
                             reader,
-                            th.success("Recipient registered: ${recipient.companyName}.")
+                            th.success("Recipient registered: ${recipient.companyName}."),
                         )
                     } catch (e: Exception) {
                         return exitToMainMenu(writer, reader, th.error("Errror: ${e.message}"))
@@ -272,7 +267,7 @@ class RecipientManager(
                     try {
                         writer.withLoading(
                             { updateRecipientWithCacheUpdate(recipient) },
-                            message = "updating information"
+                            message = "updating information",
                         )
                         scene.addRow("Recipient updated: ${recipient.companyName}.")
                     } catch (e: Exception) {

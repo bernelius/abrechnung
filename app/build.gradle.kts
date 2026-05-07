@@ -38,7 +38,7 @@ dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
 
-    //db
+    // db
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
     implementation("org.flywaydb:flyway-core:12.3.0")
@@ -48,7 +48,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-r2dbc:1.0.0")
     implementation("org.xerial:sqlite-jdbc:3.51.2.0")
     implementation("org.postgresql:postgresql:42.7.10")
-    //logging
+    // logging
     implementation("ch.qos.logback:logback-classic:1.5.32")
     implementation("com.github.ajalt.mordant:mordant:3.0.2")
     // optional extensions for running animations with coroutines
@@ -59,18 +59,19 @@ dependencies {
     implementation("com.akuleshov7:ktoml-core:0.7.1")
     // figlet
     implementation("com.github.lalyos:jfiglet:0.0.9")
-    // pdf export
+    // PDF export
     implementation("com.github.librepdf:openpdf:3.0.3")
     // e-mail
     implementation("org.eclipse.angus:jakarta.mail:2.1.0-M1")
     // audio — LWJGL OpenAL + STB Vorbis
     val lwjglVersion = "3.4.1"
     // Platform-specific natives - only include current platform
-    val lwjglNatives = when {
-        System.getProperty("os.name").lowercase().contains("win") -> listOf("natives-windows")
-        System.getProperty("os.name").lowercase().contains("mac") -> listOf("natives-macos", "natives-macos-arm64")
-        else -> listOf("natives-linux")
-    }
+    val lwjglNatives =
+        when {
+            System.getProperty("os.name").lowercase().contains("win") -> listOf("natives-windows")
+            System.getProperty("os.name").lowercase().contains("mac") -> listOf("natives-macos", "natives-macos-arm64")
+            else -> listOf("natives-linux")
+        }
 
     implementation("org.lwjgl:lwjgl:$lwjglVersion")
     implementation("org.lwjgl:lwjgl-openal:$lwjglVersion")
@@ -107,44 +108,56 @@ tasks.named<Test>("test") {
         showStandardStreams = false
     }
 
-    val RESET = "\u001B[0m"
-    val GREEN = "\u001B[32m"
-    val RED = "\u001B[31m"
-    val YELLOW = "\u001B[33m"
+    val reset = "\u001B[0m"
+    val green = "\u001B[32m"
+    val red = "\u001B[31m"
+    val yellow = "\u001B[33m"
 
-    afterTest(object : groovy.lang.Closure<Any>(this) {
-        @Suppress("UNCHECKED_CAST")
-        fun doCall(descriptor: org.gradle.api.tasks.testing.TestDescriptor, result: org.gradle.api.tasks.testing.TestResult) {
-            val (color, status) = when {
-                result.failedTestCount > 0 -> RED to "FAIL"
-                result.skippedTestCount > 0 -> YELLOW to "SKIP"
-                result.testCount > 0 -> GREEN to "PASS"
-                else -> RESET to "NONE"
+    afterTest(
+        object : groovy.lang.Closure<Any>(this) {
+            @Suppress("UNCHECKED_CAST", "unused")
+            fun doCall(
+                descriptor: TestDescriptor,
+                result: TestResult,
+            ) {
+                val (color, status) =
+                    when {
+                        result.failedTestCount > 0 -> red to "FAIL"
+                        result.skippedTestCount > 0 -> yellow to "SKIP"
+                        result.testCount > 0 -> green to "PASS"
+                        else -> reset to "NONE"
+                    }
+
+                val className = descriptor.className?.substringAfterLast(".") ?: ""
+                val methodName = descriptor.displayName.substringBefore("(")
+                println("$color[$status]$reset $className.$methodName")
             }
+        },
+    )
 
-            val className = descriptor.className?.substringAfterLast(".") ?: ""
-            val methodName = descriptor.displayName?.substringBefore("(") ?: ""
-            println("$color[$status]$RESET $className.$methodName")
-        }
-    })
-
-    afterSuite(object : groovy.lang.Closure<Any>(this) {
-        @Suppress("UNCHECKED_CAST")
-        fun doCall(descriptor: org.gradle.api.tasks.testing.TestDescriptor, result: org.gradle.api.tasks.testing.TestResult) {
-            if (descriptor.parent == null) {
-                val (color, status) = when {
-                    result.failedTestCount > 0 -> RED to "FAILED"
-                    else -> GREEN to "PASSED"
+    afterSuite(
+        object : groovy.lang.Closure<Any>(this) {
+            @Suppress("UNCHECKED_CAST", "unused")
+            fun doCall(
+                descriptor: TestDescriptor,
+                result: TestResult,
+            ) {
+                if (descriptor.parent == null) {
+                    val (color, status) =
+                        when {
+                            result.failedTestCount > 0 -> red to "FAILED"
+                            else -> green to "PASSED"
+                        }
+                    println()
+                    println(
+                        "${color}Test $status: ${result.testCount} tests, " +
+                            "${result.failedTestCount} failed, " +
+                            "${result.skippedTestCount} skipped$reset",
+                    )
                 }
-                println()
-                println(
-                    "${color}Test ${status}: ${result.testCount} tests, " +
-                        "${result.failedTestCount} failed, " +
-                        "${result.skippedTestCount} skipped$RESET",
-                )
             }
-        }
-    })
+        },
+    )
 }
 
 graalvmNative {
@@ -154,11 +167,13 @@ graalvmNative {
     }
     binaries {
         named("main") {
-            imageName.set("abrechnung") 
-            javaLauncher.set(javaToolchains.launcherFor {
-                languageVersion.set(JavaLanguageVersion.of(24))
-                vendor.set(JvmVendorSpec.GRAAL_VM)
-            })
+            imageName.set("abrechnung")
+            javaLauncher.set(
+                javaToolchains.launcherFor {
+                    languageVersion.set(JavaLanguageVersion.of(24))
+                    vendor.set(JvmVendorSpec.GRAAL_VM)
+                },
+            )
             buildArgs.add("--enable-url-protocols=https,http")
             buildArgs.add("--enable-native-access=ALL-UNNAMED")
             buildArgs.add("-H:+AddAllCharsets")
@@ -192,8 +207,8 @@ graalvmNative {
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.ContextBase")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.AppenderBase")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget")
-            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget\$1")
-            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget\$2")
+            buildArgs.add($$"--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget$1")
+            buildArgs.add($$"--initialize-at-build-time=ch.qos.logback.core.joran.spi.ConsoleTarget$2")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.OutputStreamAppender")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.UnsynchronizedAppenderBase")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.status.InfoStatus")
@@ -205,10 +220,10 @@ graalvmNative {
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.pattern.ThrowableProxyConverter")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.SimpleTimeBasedGuard")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.ReentryGuard")
-            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.ReentryGuard\$ReentryGuardImpl")
+            buildArgs.add($$"--initialize-at-build-time=ch.qos.logback.core.util.ReentryGuard$ReentryGuardImpl")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.CachingDateFormatter")
-            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.CachingDateFormatter\$CacheTuple")
-            buildArgs.add("--initialize-at-build-time=ch.qos.logback.classic.util.ContextInitializer\$1")
+            buildArgs.add($$"--initialize-at-build-time=ch.qos.logback.core.util.CachingDateFormatter$CacheTuple")
+            buildArgs.add($$"--initialize-at-build-time=ch.qos.logback.classic.util.ContextInitializer$1")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.ContextAwareImpl")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.spi.FilterAttachableImpl")
             // LWJGL needs run-time initialization (requires actual audio hardware)
@@ -217,7 +232,6 @@ graalvmNative {
             buildArgs.add("--initialize-at-run-time=org.lwjgl.stb")
             buildArgs.add("--initialize-at-run-time=org.lwjgl.system")
         }
-
     }
 }
 
@@ -231,12 +245,18 @@ tasks.register<Exec>("setupGraalVMCommunity") {
     group = "build"
     description = "Create symlink for native-image in GraalVM Community"
 
-    val javaLauncher = graalvmNative.binaries.named("main").get().javaLauncher.get()
-    val graalvmHomeDir = if (graalvmHome.isEmpty()) {
-        javaLauncher.executablePath.asFile.parentFile.parentFile
-    } else {
-        file(graalvmHome)
-    }
+    val javaLauncher =
+        graalvmNative.binaries
+            .named("main")
+            .get()
+            .javaLauncher
+            .get()
+    val graalvmHomeDir =
+        if (graalvmHome.isEmpty()) {
+            javaLauncher.executablePath.asFile.parentFile.parentFile
+        } else {
+            file(graalvmHome)
+        }
     val binDir = graalvmHomeDir.resolve("bin")
     val svmBinDir = graalvmHomeDir.resolve("lib/svm/bin")
     val nativeImageLink = binDir.resolve("native-image")
@@ -263,7 +283,11 @@ tasks.register("prepareWindowsResources") {
     description = "Create launch.bat and copy icon to build output"
     onlyIf { isWindows }
 
-    val outputDir = layout.buildDirectory.dir("native/nativeCompile").get().asFile
+    val outputDir =
+        layout.buildDirectory
+            .dir("native/nativeCompile")
+            .get()
+            .asFile
     val iconSource = file("build-tools/windows/abrechnung_dllar_logo.ico")
     val batTarget = outputDir.resolve("launch.bat")
     val iconTarget = outputDir.resolve("abrechnung_dllar_logo.ico")
@@ -272,10 +296,11 @@ tasks.register("prepareWindowsResources") {
         logger.lifecycle("Creating Windows resources in build output...")
 
         // Write launch.bat with Windows line endings
-        val batContent = """
+        val batContent =
+            """
             @echo off
             wt.exe -M -f -p "Command Prompt" cmd /c "cd /d ""%~dp0"" && chcp 65001 >nul && abrechnung.exe"
-        """.trimIndent().replace("\n", "\r\n")
+            """.trimIndent().replace("\n", "\r\n")
         batTarget.writeText(batContent)
 
         // Copy icon file
@@ -293,7 +318,6 @@ tasks.named("nativeCompile") {
     }
 }
 
-
 tasks.register("buildNativeImage") {
     group = "build"
     description = "Build GraalVM native image"
@@ -310,30 +334,38 @@ tasks.register<Exec>("buildInstaller") {
     dependsOn("nativeCompile")
     dependsOn("prepareWindowsResources")
 
-    val outputDir = layout.buildDirectory.dir("native/nativeCompile").get().asFile
+    val outputDir =
+        layout.buildDirectory
+            .dir("native/nativeCompile")
+            .get()
+            .asFile
     val buildToolsDir = file("build-tools/windows")
-    val distOutputDir = layout.buildDirectory.dir("distributions").get().asFile
+    val distOutputDir =
+        layout.buildDirectory
+            .dir("distributions")
+            .get()
+            .asFile
     val version = providers.gradleProperty("version").orElse("1.0.0").get()
 
     inputs.files(
         outputDir.resolve("abrechnung.exe"),
         outputDir.resolve("launch.bat"),
         outputDir.resolve("abrechnung_dllar_logo.ico"),
-        buildToolsDir.resolve("abrechnung.iss")
+        buildToolsDir.resolve("abrechnung.iss"),
     )
-    outputs.file(distOutputDir.resolve("abrechnung-setup-${version}.exe"))
+    outputs.file(distOutputDir.resolve("abrechnung-setup-$version.exe"))
 
     // Inno Setup Compiler must be on PATH
     commandLine(
         "iscc",
-        "/DMyAppVersion=${version}",
+        "/DMyAppVersion=$version",
         "/DMyBuildDir=${outputDir.absolutePath}",
-        buildToolsDir.resolve("abrechnung.iss").absolutePath
+        buildToolsDir.resolve("abrechnung.iss").absolutePath,
     )
 
     doFirst {
         logger.lifecycle("Building Windows installer for version $version")
-        logger.lifecycle("  Output: ${distOutputDir.resolve("abrechnung-setup-${version}.exe").absolutePath}")
+        logger.lifecycle("  Output: ${distOutputDir.resolve("abrechnung-setup-$version.exe").absolutePath}")
         distOutputDir.mkdirs()
     }
 
@@ -362,6 +394,7 @@ tasks {
                 exclude("com/sun/jna/freebsd*/**")
                 exclude("com/sun/jna/sunos*/**")
             }
+
             osName.contains("mac") -> {
                 // macOS build: exclude Linux, Windows, FreeBSD natives
                 exclude("org/sqlite/native/FreeBSD/**")
@@ -373,6 +406,7 @@ tasks {
                 exclude("com/sun/jna/freebsd*/**")
                 exclude("com/sun/jna/sunos*/**")
             }
+
             else -> {
                 // Linux build: exclude Windows, macOS, FreeBSD natives
                 exclude("org/sqlite/native/FreeBSD/**")
@@ -402,7 +436,7 @@ tasks {
         manifest {
             attributes(
                 "Main-Class" to "com.bernelius.abrechnung.AppKt",
-                "Multi-Release" to "true"
+                "Multi-Release" to "true",
             )
         }
     }

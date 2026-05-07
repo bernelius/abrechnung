@@ -3,14 +3,12 @@ package com.bernelius.abrechnung.mail
 import com.bernelius.abrechnung.models.EmailUserDTO
 import com.bernelius.abrechnung.utils.Outcome
 import jakarta.mail.Session
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
-import java.util.*
-import kotlin.time.Duration.Companion.seconds
+import java.util.Properties
 
-fun verifyEmailConfig(userConfig: EmailUserDTO, timeout: Int): Outcome {
+fun verifyEmailConfig(
+    userConfig: EmailUserDTO,
+    timeout: Int,
+): Outcome {
     val timeoutMillis = timeout * 1000
     val props =
         Properties().apply {
@@ -31,7 +29,7 @@ fun verifyEmailConfig(userConfig: EmailUserDTO, timeout: Int): Outcome {
     } catch (e: Exception) {
         if (e.message!!.contains("timeout")) {
             Outcome.Error(
-                "Timeout when validating email credentials.\nThis could mean that your email provider is not reachable.\nIt could also mean that you do not have an internet connection."
+                "Timeout when validating email credentials.\nThis could mean that your email provider is not reachable.\nIt could also mean that you do not have an internet connection.",
             )
         } else {
             return Outcome.Error(e.message ?: "Unknown error")

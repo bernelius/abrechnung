@@ -19,6 +19,4 @@ fun renderLogo(
     logoName: String,
     style: TextStyle = th.primary,
     fontName: String = th.secondaryFont,
-): String {
-    return style(makeLogo(logoName, fontName))
-}
+): String = style(makeLogo(logoName, fontName))

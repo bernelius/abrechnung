@@ -174,21 +174,21 @@ class UserConfigManager(
             }
         val bottomTitle =
             th.success("w) ") +
-                    "Write (save) changes" +
-                    if (noCancel) {
-                        ""
-                    } else {
-                        th.secondary(" / ") +
-                                th.error("c) ") +
-                                "Cancel"
-                    } +
-                    if (userConfig.emailSemanticallyValid()) {
-                        th.secondary(" / ") +
-                                th.dim("v) ") +
-                                "Check email"
-                    } else {
-                        ""
-                    }
+                "Write (save) changes" +
+                if (noCancel) {
+                    ""
+                } else {
+                    th.secondary(" / ") +
+                        th.error("c) ") +
+                        "Cancel"
+                } +
+                if (userConfig.emailSemanticallyValid()) {
+                    th.secondary(" / ") +
+                        th.dim("v) ") +
+                        "Check email"
+                } else {
+                    ""
+                }
 
         return Panel(
             theGrid,
@@ -453,7 +453,7 @@ class UserConfigManager(
         validationLoop(
             message =
                 "What is your SMTP user? This is usually the same as your e-mail address,\n" +
-                        "unless you want to send invoices from a different one than the one shown on your invoices.",
+                    "unless you want to send invoices from a different one than the one shown on your invoices.",
             prefill = userConfig.smtpUser ?: userConfig.email,
             reader = reader,
             scene = scene,
@@ -466,9 +466,10 @@ class UserConfigManager(
     }
 
     private suspend fun mainMenu(): UserConfigDTO {
-        val scene = MordantScene(writer).apply {
-            addRow(renderLogo("Konfiguration"))
-        }
+        val scene =
+            MordantScene(writer).apply {
+                addRow(renderLogo("Konfiguration"))
+            }
         var grid = userConfigGrid(userConfig)
         val idx = scene.addRow(grid)
 
@@ -493,10 +494,11 @@ class UserConfigManager(
                             val emailCredentialsOutcome =
                                 writer.withLoading({ verifyEmailConfig(emailConfig, timeout = 10) })
                             MordantScene(writer).apply {
-                                if (emailCredentialsOutcome is Outcome.Success)
+                                if (emailCredentialsOutcome is Outcome.Success) {
                                     addRow(th.success("Email credentials valid! Contact established with your email provider."))
-                                else if (emailCredentialsOutcome is Outcome.Error)
+                                } else if (emailCredentialsOutcome is Outcome.Error) {
                                     addRow(("Error validating email credentials: ${emailCredentialsOutcome.message}"))
+                                }
                                 addRow(th.secondary("Press enter to continue..."))
                                 display()
                             }
@@ -508,11 +510,12 @@ class UserConfigManager(
                     'w' to {
                         val outcome = saveUserConfig()
                         if (outcome is Outcome.Error) {
-                            val errScene = MordantScene(writer).apply {
-                                addRow("Error: ${outcome.message}")
-                                addRow("Press enter to continue...")
-                                display()
-                            }
+                            val errScene =
+                                MordantScene(writer).apply {
+                                    addRow("Error: ${outcome.message}")
+                                    addRow("Press enter to continue...")
+                                    display()
+                                }
                             reader.waitForEnter()
                         }
                         exit()
@@ -538,11 +541,12 @@ class UserConfigManager(
 
     private suspend fun saveUserConfig(): Outcome {
         try {
-            userConfig = writer.withLoading({
-                Repository.setUserConfig(userConfig)
-                UserConfigCache.invalidateAll()
-                Repository.getUserConfig()
-            }, message = "saving config")
+            userConfig =
+                writer.withLoading({
+                    Repository.setUserConfig(userConfig)
+                    UserConfigCache.invalidateAll()
+                    Repository.getUserConfig()
+                }, message = "saving config")
             return Outcome.Success("Saved")
         } catch (e: Exception) {
             return Outcome.Error("Error: ${e.message}")

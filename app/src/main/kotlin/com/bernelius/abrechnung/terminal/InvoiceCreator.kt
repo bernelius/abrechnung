@@ -8,12 +8,11 @@ import com.bernelius.abrechnung.dateprovider.DateProvider
 import com.bernelius.abrechnung.dateprovider.ofPattern
 import com.bernelius.abrechnung.mail.sendMail
 import com.bernelius.abrechnung.models.DatePattern
-import com.bernelius.abrechnung.models.VatDateConfigDTO
 import com.bernelius.abrechnung.models.EmailUserDTO
-import com.bernelius.abrechnung.models.InvoiceDTO
 import com.bernelius.abrechnung.models.InvoiceInputDTO
 import com.bernelius.abrechnung.models.InvoiceItemDTO
 import com.bernelius.abrechnung.models.RecipientDTO
+import com.bernelius.abrechnung.models.VatDateConfigDTO
 import com.bernelius.abrechnung.repository.Repository
 import com.bernelius.abrechnung.utils.Outcome
 import com.bernelius.abrechnung.utils.getOutputDir
@@ -29,11 +28,7 @@ import com.github.ajalt.mordant.table.table
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import com.bernelius.abrechnung.theme.Theme as th
 
@@ -44,7 +39,6 @@ fun createKeybinds(allRecipients: List<RecipientDTO>): CharArray {
     return allRecipients.map { it.keybind!! }.toCharArray()
 }
 
-
 class InvoiceCreator(
     private val writer: Writer,
     private val reader: InputReader,
@@ -53,7 +47,7 @@ class InvoiceCreator(
     private val mainScene: Scene = MordantScene(writer),
     private val config: InvoiceConfig = ConfigManager.loadConfig().invoiceConfig,
     private val datePattern: DatePattern = ConfigManager.loadLanguage(config.language).datePattern,
-    private val today: LocalDate = dateProvider.today()
+    private val today: LocalDate = dateProvider.today(),
 ) {
     fun createVatGrid(
         vatDateConfig: VatDateConfigDTO,
@@ -86,7 +80,10 @@ class InvoiceCreator(
         }
     }
 
-    suspend fun changeDueDateOffset(vatDateConfig: VatDateConfigDTO, idx: Int) {
+    suspend fun changeDueDateOffset(
+        vatDateConfig: VatDateConfigDTO,
+        idx: Int,
+    ) {
         validationLoop(
             message = "What is the due date offset? (in days)",
             prefill = "",
@@ -111,7 +108,10 @@ class InvoiceCreator(
         )
     }
 
-    suspend fun changeInvoiceDateOffset(vatDateConfig: VatDateConfigDTO, idx: Int) {
+    suspend fun changeInvoiceDateOffset(
+        vatDateConfig: VatDateConfigDTO,
+        idx: Int,
+    ) {
         validationLoop(
             message = "What is the invoice date offset? (in days)",
             prefill = "",
@@ -127,7 +127,7 @@ class InvoiceCreator(
                 mainScene.replaceRow(
                     idx,
                     createVatGrid(
-                        vatDateConfig
+                        vatDateConfig,
                     ),
                 )
             },
@@ -135,7 +135,10 @@ class InvoiceCreator(
         )
     }
 
-    suspend fun changeVatRate(vatDateConfig: VatDateConfigDTO, idx: Int) {
+    suspend fun changeVatRate(
+        vatDateConfig: VatDateConfigDTO,
+        idx: Int,
+    ) {
         validationLoop(
             message = "What is the VAT rate? (in percent)",
             prefill = "",
@@ -159,13 +162,11 @@ class InvoiceCreator(
         )
     }
 
-    suspend fun editDefaults(
-        vatDateConfig: VatDateConfigDTO,
-    ): VatDateConfigDTO {
-        var idx =
+    suspend fun editDefaults(vatDateConfig: VatDateConfigDTO): VatDateConfigDTO {
+        val idx =
             mainScene.addRow(
                 createVatGrid(
-                    vatDateConfig
+                    vatDateConfig,
                 ),
             )
 
@@ -187,7 +188,7 @@ class InvoiceCreator(
                 ),
             )
             mainScene.display()
-            var choice = reader.getRawCharIn('y', 'n')
+            val choice = reader.getRawCharIn('y', 'n')
             when (choice) {
                 'y' -> {
                     mainScene.removeLast()
@@ -207,7 +208,11 @@ class InvoiceCreator(
         return vatDateConfig
     }
 
-    suspend fun changeQuantity(idx: Int, invoice: InvoiceInputDTO, invoiceItem: InvoiceItemDTO) {
+    suspend fun changeQuantity(
+        idx: Int,
+        invoice: InvoiceInputDTO,
+        invoiceItem: InvoiceItemDTO,
+    ) {
         validationLoop(
             message = "What is the quantity of units?",
             prefill = "",
@@ -224,7 +229,11 @@ class InvoiceCreator(
         )
     }
 
-    suspend fun changeUnitPrice(idx: Int, invoice: InvoiceInputDTO, invoiceItem: InvoiceItemDTO) {
+    suspend fun changeUnitPrice(
+        idx: Int,
+        invoice: InvoiceInputDTO,
+        invoiceItem: InvoiceItemDTO,
+    ) {
         validationLoop(
             message = "What is the unit price of the invoice item? In ${config.currency}",
             prefill = "",
@@ -241,7 +250,11 @@ class InvoiceCreator(
         )
     }
 
-    suspend fun changeDescription(idx: Int, invoice: InvoiceInputDTO, invoiceItem: InvoiceItemDTO) {
+    suspend fun changeDescription(
+        idx: Int,
+        invoice: InvoiceInputDTO,
+        invoiceItem: InvoiceItemDTO,
+    ) {
         validationLoop(
             message = "Description of invoice item:",
             prefill = invoiceItem.description,
@@ -258,7 +271,11 @@ class InvoiceCreator(
         )
     }
 
-    suspend fun addDiscount(idx: Int, invoice: InvoiceInputDTO, invoiceItem: InvoiceItemDTO) {
+    suspend fun addDiscount(
+        idx: Int,
+        invoice: InvoiceInputDTO,
+        invoiceItem: InvoiceItemDTO,
+    ) {
         validationLoop(
             message = "What is the discount? (in percent)",
             prefill = "",
@@ -306,18 +323,17 @@ class InvoiceCreator(
         val recipientLine = "To: ${recipient.companyName}"
         mainScene.addRow(recipientLine)
 
-        var idx =
-            mainScene.addRow(
-                Panel(
-                    createVatGrid(
-                        vatDateConfig,
-                        padding = false
-                    ),
-                    bottomTitle = isCorrectYesNo,
-                    bottomTitleAlign = TextAlign.RIGHT,
-                    borderStyle = th.secondary,
+        mainScene.addRow(
+            Panel(
+                createVatGrid(
+                    vatDateConfig,
+                    padding = false,
                 ),
-            )
+                bottomTitle = isCorrectYesNo,
+                bottomTitleAlign = TextAlign.RIGHT,
+                borderStyle = th.secondary,
+            ),
+        )
 
         mainScene.display()
 
@@ -337,7 +353,7 @@ class InvoiceCreator(
         var discountRound = false
         var invoiceItem = InvoiceItemDTO()
         while (true) {
-            idx = mainScene.addRow(invoiceItemTable(invoice.invoiceItems, invoiceItem, config.currency))
+            val idx = mainScene.addRow(invoiceItemTable(invoice.invoiceItems, invoiceItem, config.currency))
             if (discountRound) {
                 addDiscount(idx, invoice, invoiceItem)
             } else {
@@ -345,8 +361,6 @@ class InvoiceCreator(
 
                 changeUnitPrice(idx, invoice, invoiceItem)
                 changeQuantity(idx, invoice, invoiceItem)
-
-
             }
 
             val panel =
@@ -364,14 +378,14 @@ class InvoiceCreator(
             val explanations =
                 Text(
                     """
-                ${th.success("y) ")}Yes, and there are no more items.
-                ${th.success("m) ")}Yes, and add one more item.
-                ${th.info("d) ")}Add a discount.
-                ${th.error("n) ")}No, I made a mistake.
-                ${th.error("c) ")}No, cancel this last item and generate the invoice.
+                    ${th.success("y) ")}Yes, and there are no more items.
+                    ${th.success("m) ")}Yes, and add one more item.
+                    ${th.info("d) ")}Add a discount.
+                    ${th.error("n) ")}No, I made a mistake.
+                    ${th.error("c) ")}No, cancel this last item and generate the invoice.
 
-                ${th.error("q) ")}Quit to main menu.
-                """.trimIndent(),
+                    ${th.error("q) ")}Quit to main menu.
+                    """.trimIndent(),
                     align = TextAlign.LEFT,
                 )
 
@@ -381,7 +395,7 @@ class InvoiceCreator(
             mainScene.addRow()
             mainScene.addRow(explanations)
             mainScene.display()
-            var choice = reader.getRawCharIn('y', 'm', 'd', 'n', 'c', 'q')
+            val choice = reader.getRawCharIn('y', 'm', 'd', 'n', 'c', 'q')
             discountRound = false
             mainScene.removeLast(5)
             when (choice) {
@@ -423,25 +437,31 @@ class InvoiceCreator(
         }
         mainScene.clear()
         mainScene.display()
-        val completeInvoice = try {
-            writer.withLoading({
-                Repository.saveInvoice(invoice).let { Repository.findInvoiceById(it) }
-            }, message = "saving invoice", scene = mainScene)
-        } catch (e: Exception) {
-            return exitToMainMenu(writer, reader, Text(th.error("${e.message}")))
-        }
+        val completeInvoice =
+            try {
+                writer.withLoading({
+                    Repository.saveInvoice(invoice).let { Repository.findInvoiceById(it) }
+                }, message = "saving invoice", scene = mainScene)
+            } catch (e: Exception) {
+                return exitToMainMenu(writer, reader, Text(th.error("${e.message}")))
+            }
         if (completeInvoice == null) {
             return exitToMainMenu(
                 writer,
                 reader,
-                Text(th.error("FATAL: Could not save invoice. Aborting creation."))
+                Text(th.error("FATAL: Could not save invoice. Aborting creation.")),
             )
         }
 
-        val outputPath = getOutputDir()
-            .resolve("invoice_${completeInvoice.id}_${completeInvoice.recipient.companyName}.pdf")
-            .toString()
-            .replace(" ", "_")
+        val safeName =
+            "invoice_${completeInvoice.id}_${completeInvoice.recipient.companyName}"
+                .lowercase()
+                .replace(Regex("""[^a-z0-9._-]+"""), "_")
+
+        val outputPath =
+            getOutputDir()
+                .resolve("$safeName.pdf")
+                .toString()
 
         val me = writer.withLoading({ Repository.getUserConfig() }, message = "resolving identity")
         val result = invoiceToPDF(outputPath, me, completeInvoice)
@@ -462,28 +482,26 @@ class InvoiceCreator(
                             outputPath,
                             recipient,
                             "Invoice for ${completeInvoice.recipient.companyName}",
-                            ""
+                            "",
                         )
                     }, "sending invoice to ${recipient.email}")
                 if (result is Outcome.Error) {
                     return exitToMainMenu(
                         writer,
                         reader,
-                        th.error("ERROR: ${result.message}\nPlease send invoice manually.")
+                        th.error("ERROR: ${result.message}\nPlease send invoice manually."),
                     )
                 }
                 return exitToMainMenu(
                     writer,
                     reader,
-                    th.success("Invoice successfully sent to ${recipient.email}.")
+                    th.success("Invoice successfully sent to ${recipient.email}."),
                 )
             }
             return exitToMainMenu(writer, reader, th.success("Invoice output to $outputPath."))
         }
     }
-
 }
-
 
 fun invoiceItemTable(
     existingItems: List<InvoiceItemDTO>,
@@ -572,5 +590,3 @@ fun invoiceItemTable(
         }
     }
 }
-
-

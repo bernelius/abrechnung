@@ -1,13 +1,13 @@
 package com.bernelius.abrechnung.database
 
-import com.bernelius.abrechnung.utils.getEnv
 import com.bernelius.abrechnung.utils.getDataDir
+import com.bernelius.abrechnung.utils.getEnv
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
@@ -21,9 +21,7 @@ private val logger = LoggerFactory.getLogger("DatabaseFactory")
 object DatabaseFactory {
     private var currentTestDb: String? = null
 
-    private fun isNativeImage(): Boolean {
-        return System.getProperty("org.graalvm.nativeimage.kind") != null
-    }
+    private fun isNativeImage(): Boolean = System.getProperty("org.graalvm.nativeimage.kind") != null
 
     /**
      * Extracts migration SQL files from the native image's resource bundle to a temporary directory.
@@ -41,21 +39,23 @@ object DatabaseFactory {
         logger.info("Extracting $dbType migrations from native image...")
 
         val dir = Files.createTempDirectory("migrations-$dbType")
-        logger.debug("Created temp directory: $dir")
+        logger.debug("Created temp directory: {}", dir)
 
         // Must explicitly create the resource filesystem in native images
         // See: https://github.com/oracle/graalvm/issues/7682
         val fs = FileSystems.newFileSystem(URI.create("resource:/"), emptyMap<String, Any>())
         val base = fs.getPath("db/migration/$dbType")
 
-        val migrationFiles = Files.walk(base)
-            .filter { it.toString().endsWith(".sql") }
-            .toList()
+        val migrationFiles =
+            Files
+                .walk(base)
+                .filter { it.toString().endsWith(".sql") }
+                .toList()
 
         if (migrationFiles.isEmpty()) {
             throw IllegalStateException(
                 "No migration files found for database type '$dbType' at path 'db/migration/$dbType/*.sql'. " +
-                "Ensure migration files exist and are included in the native image."
+                    "Ensure migration files exist and are included in the native image.",
             )
         }
 
@@ -75,9 +75,10 @@ object DatabaseFactory {
     }
 
     private fun cleanupMigrations(dir: Path) {
-        logger.debug("Cleaning up migration directory: $dir")
+        logger.debug("Cleaning up migration directory: {}", dir)
         try {
-            Files.walk(dir)
+            Files
+                .walk(dir)
                 .sorted(java.util.Comparator.reverseOrder())
                 .forEach { Files.deleteIfExists(it) }
             logger.debug("Migration directory cleaned up successfully")
@@ -88,11 +89,12 @@ object DatabaseFactory {
 
     fun init() {
         val envVar = getEnv("ABRECHNUNG_DB_URL")
-        val dbUrl = if (envVar.isNullOrBlank()) {
-            "jdbc:sqlite:${getDataDir()}/abrechnung.db"
-        } else {
-            envVar
-        }
+        val dbUrl =
+            if (envVar.isNullOrBlank()) {
+                "jdbc:sqlite:${getDataDir()}/abrechnung.db"
+            } else {
+                envVar
+            }
 
         val isSqlite = dbUrl.startsWith("jdbc:sqlite")
         val dbType = if (isSqlite) "sqlite" else "postgres"
@@ -100,40 +102,41 @@ object DatabaseFactory {
         logger.info("Initializing database: $dbUrl (type: $dbType)")
 
         // Configure HikariCP connection pool
-        val hikariConfig = HikariConfig().apply {
-            if (isSqlite) {
-                jdbcUrl = dbUrl
-            } else {
-                // Use PGSimpleDataSource directly to avoid DriverDataSource reflection issues in native images
-                dataSourceClassName = "org.postgresql.ds.PGSimpleDataSource"
-                // Parse jdbc:postgresql://host:port/db?user=x&password=y
-                val afterProto = dbUrl.substringAfter("jdbc:postgresql://")
-                val (hostPortDb, params) = afterProto.split("?", limit = 2).let { it[0] to it.getOrElse(1) { "" } }
-                val (hostPort, db) = hostPortDb.split("/", limit = 2).let { it[0] to it.getOrElse(1) { "" } }
-                val (host, port) = hostPort.split(":", limit = 2).let { it[0] to it.getOrElse(1) { "5432" }.toInt() }
-                val p = mutableMapOf<String, String>()
+        val hikariConfig =
+            HikariConfig().apply {
+                if (isSqlite) {
+                    jdbcUrl = dbUrl
+                } else {
+                    // Use PGSimpleDataSource directly to avoid DriverDataSource reflection issues in native images
+                    dataSourceClassName = "org.postgresql.ds.PGSimpleDataSource"
+                    // Parse jdbc:postgresql://host:port/db?user=x&password=y
+                    val afterProto = dbUrl.substringAfter("jdbc:postgresql://")
+                    val (hostPortDb, params) = afterProto.split("?", limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+                    val (hostPort, db) = hostPortDb.split("/", limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+                    val (host, port) = hostPort.split(":", limit = 2).let { it[0] to it.getOrElse(1) { "5432" }.toInt() }
+                    val p = mutableMapOf<String, String>()
 
-                for (param in params.split("&")) {
-                    val parts = param.split("=", limit = 2)
-                    val key = parts[0]
-                    val value = if (parts.size > 1) parts[1] else ""
-                    p[key] = value
+                    for (param in params.split("&")) {
+                        val parts = param.split("=", limit = 2)
+                        val key = parts[0]
+                        val value = if (parts.size > 1) parts[1] else ""
+                        p[key] = value
+                    }
+                    addDataSourceProperty("serverName", host)
+                    addDataSourceProperty("portNumber", port)
+                    addDataSourceProperty("databaseName", db.ifEmpty { "postgres" })
+                    addDataSourceProperty("user", p["user"] ?: "")
+                    addDataSourceProperty("password", p["password"] ?: "")
+                    // Disable prepared statement caching for connection pooler compatibility (Supabase/PgBouncer)
+                    addDataSourceProperty("prepareThreshold", "0")
                 }
-                addDataSourceProperty("serverName", host)
-                addDataSourceProperty("portNumber", port)
-                addDataSourceProperty("databaseName", db.ifEmpty { "postgres" })
-                addDataSourceProperty("user", p["user"] ?: "")
-                addDataSourceProperty("password", p["password"] ?: "")
-                // Disable prepared statement caching for connection pooler compatibility (Supabase/PgBouncer)
-                addDataSourceProperty("prepareThreshold", "0")
+                maximumPoolSize = if (isSqlite) 1 else 10
+                minimumIdle = if (isSqlite) 1 else 2
+                connectionTimeout = 30000
+                idleTimeout = 600000
+                maxLifetime = 1800000
+                poolName = "AbrechnungPool"
             }
-            maximumPoolSize = if (isSqlite) 1 else 10
-            minimumIdle = if (isSqlite) 1 else 2
-            connectionTimeout = 30000
-            idleTimeout = 600000
-            maxLifetime = 1800000
-            poolName = "AbrechnungPool"
-        }
 
         val dataSource: DataSource = HikariDataSource(hikariConfig)
 
@@ -141,25 +144,28 @@ object DatabaseFactory {
         logger.debug("Running on native image: $isNative")
 
         val migrationLocations: List<String>
-        val migrationDir: Path? = if (isNative) {
-            // In native image, extract migrations to temp files for Flyway filesystem scanning
-            // See: https://github.com/flyway/flyway/issues/2927
-            val dir = extractMigrations(dbType)
-            migrationLocations = listOf("filesystem:${dir.toAbsolutePath()}")
-            dir
-        } else {
-            // On JVM, use standard classpath scanning
-            migrationLocations = listOf("classpath:db/migration/$dbType")
-            null
-        }
+        val migrationDir: Path? =
+            if (isNative) {
+                // In native image, extract migrations to temp files for Flyway filesystem scanning
+                // See: https://github.com/flyway/flyway/issues/2927
+                val dir = extractMigrations(dbType)
+                migrationLocations = listOf("filesystem:${dir.toAbsolutePath()}")
+                dir
+            } else {
+                // On JVM, use standard classpath scanning
+                migrationLocations = listOf("classpath:db/migration/$dbType")
+                null
+            }
 
         Database.connect(dataSource)
 
         logger.info("Running Flyway migrations...")
-        val flyway = Flyway.configure()
-            .dataSource(dataSource)
-            .locations(*migrationLocations.toTypedArray())
-            .load()
+        val flyway =
+            Flyway
+                .configure()
+                .dataSource(dataSource)
+                .locations(*migrationLocations.toTypedArray())
+                .load()
         flyway.migrate()
         logger.info("Flyway migrations completed successfully")
 

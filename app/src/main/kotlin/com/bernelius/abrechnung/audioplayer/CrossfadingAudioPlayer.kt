@@ -1,6 +1,5 @@
 package com.bernelius.abrechnung.audioplayer
 
-import java.lang.UnsatisfiedLinkError
 import org.lwjgl.openal.AL
 import org.lwjgl.openal.ALC
 import org.lwjgl.openal.ALC10.alcCloseDevice
@@ -8,6 +7,7 @@ import org.lwjgl.openal.ALC10.alcCreateContext
 import org.lwjgl.openal.ALC10.alcDestroyContext
 import org.lwjgl.openal.ALC10.alcMakeContextCurrent
 import org.lwjgl.openal.ALC10.alcOpenDevice
+import java.lang.UnsatisfiedLinkError
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import java.util.concurrent.atomic.AtomicReference

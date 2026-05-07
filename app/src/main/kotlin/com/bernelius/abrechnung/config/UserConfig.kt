@@ -101,7 +101,7 @@ data class TerminalConfig(
     @TomlComments(
         "outerHotkeys:",
         "places the visual indicators for the hotkeys outside the text",
-        "purely cosmetic. Default: true"
+        "purely cosmetic. Default: true",
     )
     var outerHotkeys: Boolean = true,
     @TomlComments(
@@ -109,7 +109,7 @@ data class TerminalConfig(
         "uses the EDITOR environment variable to open the current buffer in an external",
         "editor, useful for multiline fields like email body",
         "available by pressing Ctrl+E during most text editing tasks.",
-        "default: false"
+        "default: false",
     )
     var enableExternalEditor: Boolean = false,
 )

@@ -1,8 +1,6 @@
 package com.bernelius.abrechnung.terminal
 
-import kotlinx.coroutines.*
 import com.bernelius.abrechnung.ExitSignal
-import com.github.ajalt.mordant.animation.textAnimation
 import com.bernelius.abrechnung.utils.ansiRegex
 import com.github.ajalt.mordant.input.coroutines.receiveKeyEventsFlow
 import com.github.ajalt.mordant.input.enterRawMode
@@ -14,18 +12,18 @@ import com.github.ajalt.mordant.rendering.Widget
 import com.github.ajalt.mordant.table.ColumnWidth
 import com.github.ajalt.mordant.table.grid
 import com.github.ajalt.mordant.table.horizontalLayout
-import com.github.ajalt.mordant.table.table
 import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.runBlocking
 import java.lang.AutoCloseable
 import kotlin.math.max
-import kotlin.time.Duration
 import com.bernelius.abrechnung.theme.Theme as th
 
 fun String.visualLength(): Int {
@@ -60,13 +58,13 @@ interface Writer {
 
     suspend fun <T> withLoading(
         block: suspend () -> T,
-        message: String? = "Loading",
+        message: String? = DEFAULT_LOADING_MESSAGE,
         pos: Int? = null,
         scene: Scene? = null,
     ): T
 
     companion object {
-        const val DEFAULT_LOADING_MESSAGE = "Fetching..."
+        const val DEFAULT_LOADING_MESSAGE = "Loading"
     }
 }
 
@@ -100,7 +98,7 @@ interface Scene {
         contents: Widget,
     )
 
-    fun clear(): Unit
+    fun clear()
 
     fun display(): Int
 
@@ -191,7 +189,7 @@ class MordantScene(
     }
 
     override fun removeLast(n: Int) {
-        for (i in 0 until n) {
+        repeat(n) {
             removeLast()
         }
     }
@@ -211,37 +209,6 @@ class MordantScene(
     }
 
     override fun display(): Int = ui.print(this)
-}
-
-class GenericTableController(
-    private val headers: List<String>,
-    initialRows: List<List<Any>>, // Can be String, Text, or Widget
-) {
-    private val rows = initialRows.map { it.toMutableList() }.toMutableList()
-
-    fun updateCell(
-        rowIndex: Int,
-        colIndex: Int,
-        newValue: Any,
-    ) {
-        if (rowIndex in rows.indices && colIndex in rows[rowIndex].indices) {
-            rows[rowIndex][colIndex] = newValue
-        }
-    }
-
-    fun removeRow(rowIndex: Int) {
-        if (rowIndex in rows.indices) rows.removeAt(rowIndex)
-    }
-
-    fun render() =
-        table {
-            header { row(*headers.toTypedArray()) }
-            body {
-                rows.forEach { rowData ->
-                    row(*rowData.toTypedArray())
-                }
-            }
-        }
 }
 
 val isCorrectYesNo = Text("Is this correct? ${th.success("y")}${th.norm("/")}${th.error("n")}")
@@ -268,57 +235,57 @@ class MordantUI(
         var cursorRow = 0
 
         // Build the entire frame as a single string and print atomically
-        val frame = buildString {
-            // Move to top-left
-            append(t.cursor.getMoves { setPosition(0, 0) })
+        val frame =
+            buildString {
+                // Move to top-left
+                append(t.cursor.getMoves { setPosition(0, 0) })
 
-            // Top margin
-            if (adjustment > 0) {
-                repeat(adjustment) {
+                // Top margin
+                if (adjustment > 0) {
+                    repeat(adjustment) {
+                        append(t.cursor.getMoves { clearLine() })
+                        append("\n")
+                    }
+                    cursorRow = adjustment
+                }
+
+                // Content lines
+                for (line in lines) {
+                    val padding = max(0, (t.size.width - line.visualLength()) / 2)
+                    append(" ".repeat(padding))
+                    append(line)
+                    append(t.cursor.getMoves { clearLineAfterCursor() })
+                    append("\n")
+                    cursorRow++
+                }
+
+                // Bottom margin
+                while (cursorRow < t.size.height - 1) {
                     append(t.cursor.getMoves { clearLine() })
                     append("\n")
+                    cursorRow++
                 }
-                cursorRow = adjustment
+                if (cursorRow < t.size.height) {
+                    append(t.cursor.getMoves { clearLine() })
+                }
             }
-
-            // Content lines
-            for (line in lines) {
-                val padding = max(0, (t.size.width - line.visualLength()) / 2)
-                append(" ".repeat(padding))
-                append(line)
-                append(t.cursor.getMoves { clearLineAfterCursor() })
-                append("\n")
-                cursorRow++
-            }
-
-            // Bottom margin
-            while (cursorRow < t.size.height - 1) {
-                append(t.cursor.getMoves { clearLine() })
-                append("\n")
-                cursorRow++
-            }
-            if (cursorRow < t.size.height) {
-                append(t.cursor.getMoves { clearLine() })
-            }
-        }
 
         t.rawPrint(frame)
         return adjustment + lines.size - 1
     }
 
     override fun waitForEnter() {
-        val key =
-            runBlocking {
-                t
-                    .receiveKeyEventsFlow()
-                    .first()
-                    { event ->
-                        if (event.isCtrlC) {
-                            throw ExitSignal()
-                        }
-                        event.key == "Enter"
+        runBlocking {
+            t
+                .receiveKeyEventsFlow()
+                .first()
+                { event ->
+                    if (event.isCtrlC) {
+                        throw ExitSignal()
                     }
-            }
+                    event.key == "Enter"
+                }
+        }
     }
 
     override fun getRawCharIn(vararg allowed: Char): Char = getRawCharIn(allowed.toSet())
@@ -355,7 +322,6 @@ class MordantUI(
 
         try {
             if (pos != null) {
-                val height = t.size.height
                 t.cursor.move {
                     setPosition(0, pos + 1)
                 }
@@ -373,9 +339,10 @@ class MordantUI(
                 t.print("\r" + " ".repeat(width))
                 t.print("\r" + " ".repeat(padding.coerceAtLeast(0)) + line)
                 t.cursor.show()
-                val event = runBlocking {
-                    t.receiveKeyEventsFlow().first()
-                }
+                val event =
+                    runBlocking {
+                        t.receiveKeyEventsFlow().first()
+                    }
                 if (event.isCtrlC) {
                     throw ExitSignal()
                 }
@@ -425,7 +392,7 @@ class MordantUI(
             }
             t.print(line)
         }
-        //offset so the spinner location is inside the panel
+        // offset so the spinner location is inside the panel
         return pos - 2
     }
 
@@ -436,46 +403,48 @@ class MordantUI(
         message: String?,
         pos: Int?,
         scene: Scene?,
-    ): T = coroutineScope {
-        val terminal = this@MordantUI.t
-        val centerX = terminal.size.width / 2
-        var spinnerRow = pos ?: (terminal.size.height / 2)
+    ): T =
+        coroutineScope {
+            val terminal = this@MordantUI.t
+            val centerX = terminal.size.width / 2
+            var spinnerRow = pos ?: (terminal.size.height / 2)
 
-        val deferredBlock = async { block() }
-        val start = System.currentTimeMillis()
-        val minSpinnerDelay = 50L
-        val animationDelay = 60L
-        //we wait timeToWait ms no matter what. The spinner will appear only after minSpinnerDelay.
-        var timeToWait = 10L
+            val deferredBlock = async { block() }
+            val start = System.currentTimeMillis()
+            val minSpinnerDelay = 50L
+            val animationDelay = 60L
+            // we wait timeToWait ms no matter what. The spinner will appear only after minSpinnerDelay.
+            var timeToWait = 10L
 
-        var frameIndex = 0
-        // TODO: finish the nullable message functionality
-        var needToPrintPanel = if (message != null) true else false
-        while (!deferredBlock.isCompleted) {
-            if (System.currentTimeMillis() - start >= minSpinnerDelay) {
-                timeToWait = animationDelay
-                if (needToPrintPanel) {
-                    spinnerRow = printOverlay(
-                        Panel(Text(message!!), padding = Padding(1, 1, 2, 1), borderStyle = th.secondary)
-                    )
-                    needToPrintPanel = false
+            var frameIndex = 0
+            // TODO: finish the nullable message functionality
+            var needToPrintPanel = message != null
+            while (!deferredBlock.isCompleted) {
+                if (System.currentTimeMillis() - start >= minSpinnerDelay) {
+                    timeToWait = animationDelay
+                    if (needToPrintPanel) {
+                        spinnerRow =
+                            printOverlay(
+                                Panel(Text(message!!), padding = Padding(1, 1, 2, 1), borderStyle = th.secondary),
+                            )
+                        needToPrintPanel = false
+                    }
+                    terminal.cursor.move {
+                        savePosition()
+                        setPosition(centerX, spinnerRow)
+                    }
+                    terminal.print(spinnerFrames[frameIndex])
+                    terminal.cursor.move {
+                        restorePosition()
+                    }
+                    frameIndex = (frameIndex + 1) % spinnerFrames.size
                 }
-                terminal.cursor.move {
-                    savePosition()
-                    setPosition(centerX, spinnerRow)
-                }
-                terminal.print(spinnerFrames[frameIndex])
-                terminal.cursor.move {
-                    restorePosition()
-                }
-                frameIndex = (frameIndex + 1) % spinnerFrames.size
+                delay(timeMillis = timeToWait)
             }
-            delay(timeMillis = timeToWait)
-        }
 
-        scene?.display()
-        deferredBlock.await()
-    }
+            scene?.display()
+            deferredBlock.await()
+        }
 }
 
 fun createGrid(

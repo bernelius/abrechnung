@@ -6,19 +6,25 @@ import com.bernelius.abrechnung.models.UserConfigDTO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
 
 open class TtlCache<K : Any, V : Any>(
     private val ttlMillis: Long = 300_000,
 ) {
-    private data class Entry<V>(val value: V, val timestamp: Long)
+    private data class Entry<V>(
+        val value: V,
+        val timestamp: Long,
+    )
 
     private val cache = ConcurrentHashMap<K, Entry<V>>()
     private val fetchMutexes = ConcurrentHashMap<K, Mutex>()
 
-    suspend fun getOrFetch(key: K, fetcher: suspend () -> V): V {
+    suspend fun getOrFetch(
+        key: K,
+        fetcher: suspend () -> V,
+    ): V {
         val cached = cache[key]
         if (cached != null && System.currentTimeMillis() - cached.timestamp < ttlMillis) {
             return cached.value
@@ -56,6 +62,7 @@ open class TtlCache<K : Any, V : Any>(
 }
 
 object RecipientCache : TtlCache<String, List<RecipientDTO>>(ttlMillis = 300_000)
-object InvoiceCache : TtlCache<String, List<InvoiceDTO>>(ttlMillis = 300_000)
-object UserConfigCache : TtlCache<String, UserConfigDTO>(ttlMillis = 300_000)
 
+object InvoiceCache : TtlCache<String, List<InvoiceDTO>>(ttlMillis = 300_000)
+
+object UserConfigCache : TtlCache<String, UserConfigDTO>(ttlMillis = 300_000)

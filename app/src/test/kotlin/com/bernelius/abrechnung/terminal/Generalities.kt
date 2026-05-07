@@ -4,6 +4,7 @@ import com.bernelius.abrechnung.utils.ansiRegex
 import com.github.ajalt.mordant.rendering.Widget
 import com.github.ajalt.mordant.terminal.Terminal
 import kotlinx.coroutines.runBlocking
+import kotlin.time.Duration
 
 class MockReader(
     val inputs: List<String>,

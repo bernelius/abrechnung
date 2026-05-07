@@ -5,25 +5,24 @@ import com.bernelius.abrechnung.config.ConfigManager
 import com.bernelius.abrechnung.config.TerminalConfig
 import com.bernelius.abrechnung.database.DatabaseFactory
 import com.bernelius.abrechnung.dateprovider.SystemDateProvider
-import com.bernelius.abrechnung.repository.Repository
+import com.bernelius.abrechnung.logging.configureLogging
 import com.bernelius.abrechnung.models.InvoiceDTO
 import com.bernelius.abrechnung.models.RecipientDTO
 import com.bernelius.abrechnung.models.UserConfigDTO
+import com.bernelius.abrechnung.repository.Repository
 import com.bernelius.abrechnung.terminal.HelpScene
+import com.bernelius.abrechnung.terminal.InvoiceCreator
 import com.bernelius.abrechnung.terminal.InvoiceManager
 import com.bernelius.abrechnung.terminal.MordantScene
 import com.bernelius.abrechnung.terminal.MordantUI
 import com.bernelius.abrechnung.terminal.RecipientManager
 import com.bernelius.abrechnung.terminal.SettingsManager
 import com.bernelius.abrechnung.terminal.UserConfigManager
-import com.bernelius.abrechnung.terminal.InvoiceCreator
 import com.bernelius.abrechnung.terminal.navigationLoop
 import com.bernelius.abrechnung.terminal.stdMenuRow
 import com.bernelius.abrechnung.utils.exitProgram
-import com.bernelius.abrechnung.utils.renderLogo
 import com.bernelius.abrechnung.utils.getLogDir
-import com.bernelius.abrechnung.theme.Theme as th
-import com.bernelius.abrechnung.logging.configureLogging
+import com.bernelius.abrechnung.utils.renderLogo
 import com.github.ajalt.mordant.table.grid
 import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
@@ -39,26 +38,31 @@ import org.sqlite.date.ExceptionUtils
 import java.io.FileOutputStream
 import java.io.PrintStream
 import kotlin.system.exitProcess
+import com.bernelius.abrechnung.theme.Theme as th
 
 data class StartupData(
     val overdueState: Boolean,
     val credentialsConfig: UserConfigDTO,
 )
 
-suspend fun loadStartupData() = coroutineScope {
-    val configDeferred = async { Repository.getUserConfig() }
-    val recipientsDeferred = async { Repository.findAllRecipientsSortFrequency() }
-    val invoicesDeferred = async { Repository.findAllInvoices(filter = "pending") }
+suspend fun loadStartupData() =
+    coroutineScope {
+        val configDeferred = async { Repository.getUserConfig() }
+        val recipientsDeferred = async { Repository.findAllRecipientsSortFrequency() }
+        val invoicesDeferred = async { Repository.findAllInvoices(filter = "pending") }
 
-    StartupData(
-        overdueState = invoicesDeferred.await().firstOrNull().let {
-            if (it == null) false else {
-                it.dueDate < dateProvider.today()
-            }
-        },
-        credentialsConfig = configDeferred.await(),
-    )
-}
+        StartupData(
+            overdueState =
+                invoicesDeferred.await().firstOrNull().let {
+                    if (it == null) {
+                        false
+                    } else {
+                        it.dueDate < dateProvider.today()
+                    }
+                },
+            credentialsConfig = configDeferred.await(),
+        )
+    }
 
 object Songs {
     const val ABRECHNUNG = "music/ABRECHNUNG.ogg"
@@ -70,28 +74,28 @@ object Songs {
 val dateProvider = SystemDateProvider()
 var terminalConfig = ConfigManager.loadConfig().terminalConfig
 
-
 suspend fun main() {
     try {
         MordantUI().use { ui ->
             /*
-            * a full day of trying to get logback to cooperate in graalVM on startup left me with no option but to brute force this stream redirection.
-            * not pretty, but it's better than getting spammed with log messages from hikari 
-            * (in stdout! what the crap... never found the root cause of this) when the app starts up.
-            * the shadowJar worked fine with the ui.withLoading() version, so it's still an option for non-graal builds.
-            * used to be ui.withLoading({ ...get all the lateinit vars... }) but now we do this instead.
-            *
-            * o beautiful spinner, thou shalt be missed.
-            *
-            * TODO: hack together a withloading version that also controls the output stream
-            */
+             * a full day of trying to get logback to cooperate in graalVM on startup left me with no option but to brute force this stream redirection.
+             * not pretty, but it's better than getting spammed with log messages from hikari
+             * (in stdout! what the crap... never found the root cause of this) when the app starts up.
+             * the shadowJar worked fine with the ui.withLoading() version, so it's still an option for non-graal builds.
+             * used to be ui.withLoading({ ...get all the lateinit vars... }) but now we do this instead.
+             *
+             * o beautiful spinner, thou shalt be missed.
+             *
+             * TODO: hack together a withloading version that also controls the output stream
+             */
 
-            var scene = MordantScene(ui).apply {
-                addRow(
-                    Text("initializing..."),
-                )
-                display()
-            }
+            var scene =
+                MordantScene(ui).apply {
+                    addRow(
+                        Text("initializing..."),
+                    )
+                    display()
+                }
             val originalOut = System.out
             val originalErr = System.err
             val logDir = getLogDir()
@@ -122,7 +126,7 @@ suspend fun main() {
                             writer = ui,
                             reader = ui,
                             dateProvider = dateProvider,
-                            appScope = appScope
+                            appScope = appScope,
                         ).generateInvoice()
                     },
                     'm' to {
@@ -154,7 +158,6 @@ suspend fun main() {
                     'q' to { exitProgram() },
                 )
 
-
             val logo = renderLogo("Abrechnung?", fontName = th.primaryFont)
             val logoWidth = logo.split("\n")[0].length
 
@@ -182,10 +185,11 @@ suspend fun main() {
                         exitProgram()
                     }
                     try {
-                        credentialsConfig = UserConfigManager(
-                            writer = ui,
-                            reader = ui,
-                        ).start(init = true)
+                        credentialsConfig =
+                            UserConfigManager(
+                                writer = ui,
+                                reader = ui,
+                            ).start(init = true)
                     } catch (e: ExitSignal) {
                         exit()
                     }
