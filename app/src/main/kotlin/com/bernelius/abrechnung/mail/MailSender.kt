@@ -14,6 +14,8 @@ import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
 import java.io.File
 import java.util.Properties
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 
 fun sendMail(
@@ -22,14 +24,19 @@ fun sendMail(
     recipient: RecipientDTO,
     emailSubject: String,
     body: String,
+    timeout: Duration = 20.seconds,
 ): Outcome {
     try {
+        val timeoutMillis = timeout.inWholeMilliseconds
         val props =
             Properties().apply {
                 put("mail.smtp.host", from.host)
                 put("mail.smtp.port", from.port.toString())
                 put("mail.smtp.auth", true.toString())
                 put("mail.smtp.starttls.enable", true.toString())
+                put("mail.smtp.connectiontimeout", timeoutMillis.toString())
+                put("mail.smtp.timeout", timeoutMillis.toString())
+                put("mail.smtp.writetimeout", timeoutMillis.toString())
             }
 
         val myEmail: String = from.email
