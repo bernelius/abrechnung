@@ -11,14 +11,10 @@ import com.github.ajalt.mordant.rendering.TextAlign
 import com.github.ajalt.mordant.rendering.Widget
 import com.github.ajalt.mordant.table.ColumnWidth
 import com.github.ajalt.mordant.table.grid
-import com.github.ajalt.mordant.table.horizontalLayout
-import com.github.ajalt.mordant.table.verticalLayout
 import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 import com.bernelius.abrechnung.theme.Theme as th
 
 class UserConfigManager(
@@ -215,7 +211,7 @@ class UserConfigManager(
         val message = "What is your email password?"
         var varMsg = message
         while (true) {
-            var emailPassword =
+            val emailPassword =
                 validationLoop(
                     message = varMsg,
                     prefill = "",
@@ -227,7 +223,7 @@ class UserConfigManager(
                     maskInput = true,
                 )
 
-            var emailPassword2 =
+            val emailPassword2 =
                 validationLoop(
                     message = "Confirm: $message",
                     prefill = "",
@@ -470,7 +466,7 @@ class UserConfigManager(
             MordantScene(writer).apply {
                 addRow(renderLogo("Konfiguration"))
             }
-        var grid = userConfigGrid(userConfig)
+        val grid = userConfigGrid(userConfig)
         val idx = scene.addRow(grid)
 
         navigationLoop {
@@ -492,7 +488,7 @@ class UserConfigManager(
                             val emailConfig = userConfig.toEmailUserDTO()
 
                             val emailCredentialsOutcome =
-                                writer.withLoading({ verifyEmailConfig(emailConfig, timeout = 10) })
+                                writer.withLoading({ verifyEmailConfig(emailConfig, timeout = 10.seconds) })
                             MordantScene(writer).apply {
                                 if (emailCredentialsOutcome is Outcome.Success) {
                                     addRow(th.success("Email credentials valid! Contact established with your email provider."))
@@ -510,12 +506,11 @@ class UserConfigManager(
                     'w' to {
                         val outcome = saveUserConfig()
                         if (outcome is Outcome.Error) {
-                            val errScene =
-                                MordantScene(writer).apply {
-                                    addRow("Error: ${outcome.message}")
-                                    addRow("Press enter to continue...")
-                                    display()
-                                }
+                            MordantScene(writer).apply {
+                                addRow("Error: ${outcome.message}")
+                                addRow("Press enter to continue...")
+                                display()
+                            }
                             reader.waitForEnter()
                         }
                         exit()
@@ -529,7 +524,7 @@ class UserConfigManager(
                         }
                     },
                 )
-            var choice = reader.getRawCharIn(*actions.keys.toCharArray())
+            val choice = reader.getRawCharIn(*actions.keys.toCharArray())
             if (choice != 'c' || !noCancel) {
                 scene.replaceRow(idx, linearUserConfigGrid(userConfig, current = choice))
                 scene.display()
@@ -556,7 +551,7 @@ class UserConfigManager(
     private suspend fun firstTimeSetup(): UserConfigDTO {
         val scene = MordantScene(writer)
         scene.addRow(renderLogo("Wilkommen", style = th.info))
-        var grid = linearUserConfigGrid(userConfig)
+        val grid = linearUserConfigGrid(userConfig)
 
         val idx = scene.addRow(grid)
         scene.display()
@@ -586,7 +581,7 @@ class UserConfigManager(
         reader.waitForEnter()
         scene.replaceRow(idx, linearUserConfigGrid(userConfig))
 
-        var smtpHost = changeSmtpHost(scene, idx)
+        val smtpHost = changeSmtpHost(scene, idx)
 
         if (smtpHost.isNotBlank()) {
             changeSmtpPort(scene, idx)
@@ -606,7 +601,7 @@ class UserConfigManager(
         )
         scene.display()
 
-        var choice = reader.getRawCharIn('y', 'n')
+        val choice = reader.getRawCharIn('y', 'n')
         when (choice) {
             'y' -> {
                 saveUserConfig()

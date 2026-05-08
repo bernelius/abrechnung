@@ -13,6 +13,7 @@ import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
 import java.io.File
+import java.net.SocketTimeoutException
 import java.util.Properties
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -73,6 +74,14 @@ fun sendMail(
         Transport.send(message)
         return Outcome.Success("Mail sent to ${recipient.email}.")
     } catch (e: Exception) {
-        return Outcome.Error(e.message ?: "Unknown error")
-    }
+    val isTimeout = generateSequence(e as Throwable?) { it.cause }
+        .any { it is SocketTimeoutException }
+
+    return Outcome.Error(
+        when {
+            isTimeout -> "Connection timeout"
+            else -> e.message ?: "Unknown error"
+        }
+    )
+}
 }
