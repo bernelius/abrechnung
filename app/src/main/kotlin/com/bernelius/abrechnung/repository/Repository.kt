@@ -98,7 +98,7 @@ object Repository {
     }
 
     suspend fun findAllInvoices(
-        filter: String?,
+        filter: String? = null,
         negate: Boolean = false,
     ): List<InvoiceDTO> =
         InvoiceCache
