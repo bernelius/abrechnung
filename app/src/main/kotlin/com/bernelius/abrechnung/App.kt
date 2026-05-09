@@ -2,12 +2,9 @@ package com.bernelius.abrechnung
 
 import com.bernelius.abrechnung.audioplayer.CrossfadingAudioPlayer
 import com.bernelius.abrechnung.config.ConfigManager
-import com.bernelius.abrechnung.config.TerminalConfig
 import com.bernelius.abrechnung.database.DatabaseFactory
 import com.bernelius.abrechnung.dateprovider.SystemDateProvider
 import com.bernelius.abrechnung.logging.configureLogging
-import com.bernelius.abrechnung.models.InvoiceDTO
-import com.bernelius.abrechnung.models.RecipientDTO
 import com.bernelius.abrechnung.models.UserConfigDTO
 import com.bernelius.abrechnung.repository.Repository
 import com.bernelius.abrechnung.terminal.HelpScene
@@ -16,6 +13,7 @@ import com.bernelius.abrechnung.terminal.InvoiceManager
 import com.bernelius.abrechnung.terminal.MordantScene
 import com.bernelius.abrechnung.terminal.MordantUI
 import com.bernelius.abrechnung.terminal.RecipientManager
+import com.bernelius.abrechnung.terminal.ReportManager
 import com.bernelius.abrechnung.terminal.SettingsManager
 import com.bernelius.abrechnung.terminal.UserConfigManager
 import com.bernelius.abrechnung.terminal.navigationLoop
@@ -32,9 +30,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.postgresql.util.PSQLException
-import org.sqlite.date.ExceptionUtils
 import java.io.FileOutputStream
 import java.io.PrintStream
 import kotlin.system.exitProcess
@@ -48,7 +45,7 @@ data class StartupData(
 suspend fun loadStartupData() =
     coroutineScope {
         val configDeferred = async { Repository.getUserConfig() }
-        val recipientsDeferred = async { Repository.findAllRecipientsSortFrequency() }
+        launch { Repository.findAllRecipientsSortFrequency() }
         val invoicesDeferred = async { Repository.findAllInvoices(filter = "pending") }
 
         StartupData(
@@ -89,7 +86,7 @@ suspend fun main() {
              * TODO: hack together a withloading version that also controls the output stream
              */
 
-            var scene =
+            val scene =
                 MordantScene(ui).apply {
                     addRow(
                         Text("initializing..."),
@@ -109,7 +106,9 @@ suspend fun main() {
                 DatabaseFactory.init()
             } catch (e: PSQLException) {
                 System.setErr(originalErr)
-                System.err.println("Could not connect to database. Please check your configuration.")
+                System.err.println(
+                    "Could not connect to database. Please check your configuration. Full error: ${e.message}"
+                )
                 exitProcess(1)
             }
             audioPlayer.start()
@@ -139,6 +138,7 @@ suspend fun main() {
                     },
                     'r' to { RecipientManager(writer = ui, reader = ui).registrationMenu() },
                     'u' to { RecipientManager(writer = ui, reader = ui).updateRecipientMenu() },
+                    'r' to { ReportManager(writer = ui, reader = ui).mainMenu() },
                     's' to {
                         audioPlayer.play(Songs.EINSTELLUNG)
                         SettingsManager(writer = ui, reader = ui, configManager = ConfigManager).mainMenu()
@@ -176,12 +176,11 @@ suspend fun main() {
             }
 
             navigationLoop {
-                var scene = MordantScene(ui)
 
                 while (!credentialsConfig.isValid()) {
                     try {
                         HelpScene(writer = ui, reader = ui).helpDisplay(intro = true)
-                    } catch (e: ExitSignal) {
+                    } catch (_: ExitSignal) {
                         exitProgram()
                     }
                     try {
@@ -190,7 +189,7 @@ suspend fun main() {
                                 writer = ui,
                                 reader = ui,
                             ).start(init = true)
-                    } catch (e: ExitSignal) {
+                    } catch (_: ExitSignal) {
                         exit()
                     }
                 }
@@ -203,6 +202,7 @@ suspend fun main() {
                             stdMenuRow('m', "manage unpaid invoices")
                             stdMenuRow('r', "register new recipient")
                             stdMenuRow('u', "update recipient information")
+                            stdMenuRow('r', "reporting")
                             stdMenuRow('c', "configuration of self")
                             stdMenuRow('s', "app settings")
                             stdMenuRow('h', "help")
@@ -212,17 +212,19 @@ suspend fun main() {
                         padding = Padding(1, 3, 1, 3),
                     )
 
-                val logoRow = scene.addRow(renderLogo("Abrechnung?", th.primary, th.primaryFont))
-                val menuRow = scene.addRow(menu)
+                val scene = MordantScene(ui)
+                scene.addRow(renderLogo("Abrechnung?", th.primary, th.primaryFont))
+                scene.addRow(menu)
                 scene.display()
 
                 try {
                     val key: Char = ui.getRawCharIn(actions.keys)
                     try {
                         coroutineScope { actions[key]!!.invoke() }
-                    } catch (e: ExitSignal) {
+                    } catch (_: ExitSignal) {
+                    // without this, the app will exit out completely when ExitSignal is thrown
                     }
-                } catch (e: ExitSignal) {
+                } catch (_: ExitSignal) {
                     exit()
                 }
             }
