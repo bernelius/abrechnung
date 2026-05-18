@@ -299,7 +299,25 @@ tasks.register("prepareWindowsResources") {
         val batContent =
             """
             @echo off
-            wt.exe -M -f -p "Command Prompt" cmd /c "cd /d ""%~dp0"" && chcp 65001 >nul && abrechnung.exe"
+            setlocal
+            chcp 65001 >nul
+
+            where wt.exe >nul 2>&1
+            if errorlevel 1 (
+                echo ERROR: wt.exe was not found in your PATH.
+                echo Please install Windows Terminal or add it to your PATH.
+                pause
+                endlocal
+                exit /b 1
+            )
+            rem Windows Terminal built-in "Command Prompt" profile GUID (avoids relying on profile name or default profile)
+            wt.exe -M -f -p "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}" -d "%~dp0." cmd.exe /c "chcp 65001 >nul && abrechnung.exe"
+            if errorlevel 1 (
+                echo.
+                echo ERROR: Failed to launch Windows Terminal.
+                pause
+            )
+            endlocal
             """.trimIndent().replace("\n", "\r\n")
         batTarget.writeText(batContent)
 

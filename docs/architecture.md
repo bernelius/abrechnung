@@ -440,11 +440,14 @@ invoiceNumber = "Invoice Number"
 - GraalVM Community edition support via `setupGraalVMCommunity` task (creates symlink for native-image)
 
 **Windows Native Compilation:**
-- Windows native executable: `app.exe`
-- Windows Terminal launcher: `abrechnung.bat` (automatically generated during `nativeCompile`)
+- Windows native executable: `abrechnung.exe`
+- Windows Terminal launcher: `launch.bat` (automatically generated during `nativeCompile`)
 - The launcher script uses Windows Terminal (`wt.exe`) with explicit Command Prompt profile
 - Sets UTF-8 code page (`chcp 65001`) for proper Unicode rendering of box-drawing characters
-- Launch command: `abrechnung.bat` (requires Windows Terminal installed)
+- Uses `wt.exe -d "%~dp0."` to avoid trailing-backslash quote-escaping bugs in `cmd /c`
+- Uses the built-in Command Prompt profile GUID (`{0caa0dad-35be-5f56-a8ff-afceeeaa6101}`) instead of the profile name, avoiding issues if the profile was renamed or the default profile is WSL/PowerShell
+- Validates `wt.exe` is available before attempting launch; shows clear error and pauses if missing
+- Launch command: `launch.bat` (requires Windows Terminal installed)
 - All command-line arguments are passed through to the application
 
 **Windows Installer:**
@@ -466,7 +469,7 @@ invoiceNumber = "Invoice Number"
 - Configuration: `app/build-tools/windows/abrechnung.iss`
 - Output: `app/build/distributions/abrechnung-x.y.z-setup.exe`
 - CI/CD: Automatically built and attached to GitHub Releases via `workflow_dispatch` or tag push
-- Note: Shortcuts and launcher use `launch.bat` to ensure Windows Terminal is used
+- Note: Shortcuts and launcher use `launch.bat` to ensure Windows Terminal is used; `wt.exe` must be available in PATH
 
 **macOS Native Compilation:**
 - Native executable built with GraalVM native-image
