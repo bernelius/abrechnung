@@ -17,7 +17,6 @@ import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -36,9 +35,9 @@ class InvoiceManager(
         val menu =
             Panel(
                 grid {
-                    stdMenuRow('m', "manage unpaid invoices")
-                    stdMenuRow('s', "send receipt of paid invoice")
-                    stdMenuRow('q', "quit to main menu", th.error)
+                    stdMenuRow("m", "manage unpaid invoices")
+                    stdMenuRow("s", "send receipt of paid invoice")
+                    stdMenuRow("q", "quit to main menu", th.error)
                 },
                 title = Text(th.secondary("What do you want to do?")),
                 padding = Padding(1, 3, 1, 3),
@@ -48,15 +47,15 @@ class InvoiceManager(
         scene.addRow(menu)
         navigationLoop {
             scene.display()
-            when (val char = reader.getRawCharIn('m', 's', 'q')) {
-                'm' -> {
+            when (val char = reader.getKeyIn("m", "s", "q")) {
+                "m" -> {
                     listUnpaidInvoices()
                 }
 
-                's' -> { // listPaidInvoices()
+                "s" -> { // listPaidInvoices()
                 }
 
-                'q' -> {
+                "q" -> {
                     exit()
                 }
             }
@@ -79,11 +78,11 @@ class InvoiceManager(
             )
         }
 
-    fun createKeybinds(rows: Collection<InvoiceDisplayRow>): CharArray {
+    fun createKeybinds(rows: Collection<InvoiceDisplayRow>): Array<String> {
         rows.forEachIndexed { index, row ->
             row.keybind = mapIntToHotkey(index)
         }
-        return rows.map { it.keybind!! }.toCharArray()
+        return rows.map { it.keybind!! }.toTypedArray()
     }
 
     private fun invoicesPanel(rows: List<InvoiceDisplayRow>): Widget =
@@ -91,7 +90,7 @@ class InvoiceManager(
             borderStyle = th.secondary,
             title = Text(th.secondary("Pending invoices")),
             titleAlign = TextAlign.CENTER,
-            bottomTitle = Text("${th.error("q)")} Quit"),
+            bottomTitle = Text("${th.error("Ctrl-c)")} Cancel"),
             bottomTitleAlign = TextAlign.RIGHT,
             content =
                 table {
@@ -159,10 +158,7 @@ class InvoiceManager(
             val keybinds = createKeybinds(formattedInvoices)
             scene.replaceRow(idx, invoicesPanel(formattedInvoices))
             scene.display()
-            var char = reader.getRawCharIn(*keybinds, 'q')
-            if (char == 'q') {
-                exit()
-            }
+            var char = reader.getKeyIn(*keybinds)
             val selection = formattedInvoices.find { it.keybind == char }
             if (selection != null) {
                 var invoice = pendingInvoices.find { selection.invoiceId == it.id }
@@ -192,34 +188,34 @@ class InvoiceManager(
         navigationLoop {
             val pOption =
                 when (invoice.status) {
-                    "pending" -> StyledMenuOption('p', th.primary, "Mark as paid")
-                    else -> StyledMenuOption('p', th.primary, "Pendify")
+                    "pending" -> StyledMenuOption("p", th.primary, "Mark as paid")
+                    else -> StyledMenuOption("p", th.primary, "Pendify")
                 }
             val options =
                 listOf(
                     pOption,
-                    StyledMenuOption('i', th.error, "Invalidate"),
-                    StyledMenuOption('w', th.success, "Write (save changes)"),
-                    StyledMenuOption('c', th.norm, "Cancel"),
+                    StyledMenuOption("i", th.error, "Invalidate"),
+                    StyledMenuOption("w", th.success, "Write (save changes)"),
+                    StyledMenuOption("c", th.norm, "Cancel"),
                 )
 
             scene.replaceRow(anchor, invoiceDetailsTable(invoice, isOverdue, options))
             scene.display()
-            when (val char = reader.getRawCharIn(*options.map { it.key }.toCharArray())) {
-                'p' -> {
+            when (val char = reader.getKeyIn(*options.map { it.key }.toTypedArray())) {
+                "p" -> {
                     togglePaidStatus(invoice)
                 }
 
-                'i' -> {
+                "i" -> {
                     invalidateInvoice(invoice)
                 }
 
-                'w' -> {
+                "w" -> {
                     modification = true
                     exit()
                 }
 
-                'c' -> {
+                "c" -> {
                     exit()
                 }
             }
@@ -317,7 +313,7 @@ class InvoiceManager(
                 for (option in options) {
                     row {
                         cellBorders = Borders.NONE
-                        cell(option.style(option.key.toString() + ") ") + option.value) {
+                        cell(option.style(option.key + ") ") + option.value) {
                             columnSpan = 5
                             align = TextAlign.LEFT
                         }
@@ -328,7 +324,7 @@ class InvoiceManager(
     }
 
     class InvoiceDisplayRow(
-        var keybind: Char?,
+        var keybind: String?,
         var invoiceId: Int,
         var recipientName: String,
         var dueDate: String,

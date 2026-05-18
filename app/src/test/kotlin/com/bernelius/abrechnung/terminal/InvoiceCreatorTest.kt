@@ -74,7 +74,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with valid vat rate returns correct dto`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("25", "", ""), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("25", "", ""), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -86,7 +86,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with blank vat rate returns zero`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("", "", ""), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("", "", ""), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -98,7 +98,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with invalid vat rate shows error then accepts valid`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("invalid", "25", "", ""), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("invalid", "25", "", ""), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -110,7 +110,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with vat rate over 100 shows error`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("150", "50", "", ""), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("150", "50", "", ""), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -122,7 +122,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with negative vat rate shows error`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("-10", "25", "", ""), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("-10", "25", "", ""), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -134,7 +134,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with valid invoice date offset returns correct dto`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("", "7", ""), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("", "7", ""), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -146,7 +146,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with blank invoice date offset returns zero`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("", "", ""), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("", "", ""), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -158,7 +158,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with invalid invoice date offset shows error then accepts valid`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("", "-1", "7", ""), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("", "-1", "7", ""), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -170,7 +170,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with valid due date offset returns correct dto`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("", "", "30"), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("", "", "30"), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -182,7 +182,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with blank due date offset returns config default`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("", "", ""), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("", "", ""), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -194,7 +194,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults with invalid due date offset shows error then accepts valid`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("", "", "abc", "30"), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("", "", "abc", "30"), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -206,7 +206,7 @@ class InvoiceCreatorTest {
     @Test
     fun `editDefaults all valid inputs returns complete dto`() =
         runBlocking {
-            val reader = MockReader(inputs = listOf("25", "7", "30"), rawChars = listOf('y'))
+            val reader = MockReader(inputs = listOf("25", "7", "30"), rawChars = listOf("y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 
@@ -222,7 +222,7 @@ class InvoiceCreatorTest {
         runBlocking {
             // User says 'n' first (not correct), then re-enters values and says 'y'
             // When 'n' is pressed, the navigation loop restarts, so we need inputs for the second iteration too
-            val reader = MockReader(inputs = listOf("25", "", "", "30", "", ""), rawChars = listOf('n', 'y'))
+            val reader = MockReader(inputs = listOf("25", "", "", "30", "", ""), rawChars = listOf("n", "y"))
             val scene = MockScene()
             val creator = createInvoiceCreator(reader, scene)
 

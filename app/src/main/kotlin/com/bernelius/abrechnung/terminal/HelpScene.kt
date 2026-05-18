@@ -82,7 +82,7 @@ class HelpScene(
         scene.addRow(info)
         scene.display()
         if (intro) {
-            reader.getRawCharIn('f')
+            reader.getKeyIn("f")
         } else {
             reader.waitForEnter()
         }

@@ -7,17 +7,7 @@ import com.bernelius.abrechnung.dateprovider.SystemDateProvider
 import com.bernelius.abrechnung.logging.configureLogging
 import com.bernelius.abrechnung.models.UserConfigDTO
 import com.bernelius.abrechnung.repository.Repository
-import com.bernelius.abrechnung.terminal.HelpScene
-import com.bernelius.abrechnung.terminal.InvoiceCreator
-import com.bernelius.abrechnung.terminal.InvoiceManager
-import com.bernelius.abrechnung.terminal.MordantScene
-import com.bernelius.abrechnung.terminal.MordantUI
-import com.bernelius.abrechnung.terminal.RecipientManager
-import com.bernelius.abrechnung.terminal.ReportManager
-import com.bernelius.abrechnung.terminal.SettingsManager
-import com.bernelius.abrechnung.terminal.UserConfigManager
-import com.bernelius.abrechnung.terminal.navigationLoop
-import com.bernelius.abrechnung.terminal.stdMenuRow
+import com.bernelius.abrechnung.terminal.*
 import com.bernelius.abrechnung.utils.exitProgram
 import com.bernelius.abrechnung.utils.getLogDir
 import com.bernelius.abrechnung.utils.renderLogo
@@ -25,12 +15,7 @@ import com.github.ajalt.mordant.table.grid
 import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.postgresql.util.PSQLException
 import java.io.FileOutputStream
 import java.io.PrintStream
@@ -115,12 +100,12 @@ suspend fun main() {
             val startupData = loadStartupData()
             val appScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-            var mainSong = if (startupData.overdueState) Songs.FINSTERNIS else Songs.ABRECHNUNG
+            val mainSong = if (startupData.overdueState) Songs.FINSTERNIS else Songs.ABRECHNUNG
             var credentialsConfig = startupData.credentialsConfig
 
-            val actions: Map<Char, suspend () -> Unit> =
+            val actions: Map<String, suspend () -> Unit> =
                 mapOf(
-                    'g' to {
+                    "g" to {
                         InvoiceCreator(
                             writer = ui,
                             reader = ui,
@@ -128,7 +113,7 @@ suspend fun main() {
                             appScope = appScope,
                         ).generateInvoice()
                     },
-                    'm' to {
+                    "m" to {
                         InvoiceManager(
                             writer = ui,
                             reader = ui,
@@ -136,14 +121,14 @@ suspend fun main() {
                             appScope = appScope,
                         ).listUnpaidInvoices()
                     },
-                    'r' to { RecipientManager(writer = ui, reader = ui).registrationMenu() },
-                    'u' to { RecipientManager(writer = ui, reader = ui).updateRecipientMenu() },
-                    'r' to { ReportManager(writer = ui, reader = ui).mainMenu() },
-                    's' to {
+                    "r" to { RecipientManager(writer = ui, reader = ui).registrationMenu() },
+                    "u" to { RecipientManager(writer = ui, reader = ui).updateRecipientMenu() },
+                    "e" to { ReportManager(writer = ui, reader = ui).mainMenu() },
+                    "s" to {
                         audioPlayer.play(Songs.EINSTELLUNG)
                         SettingsManager(writer = ui, reader = ui, configManager = ConfigManager).mainMenu()
                     },
-                    'c' to {
+                    "c" to {
                         audioPlayer.play(Songs.EINSTELLUNG)
                         UserConfigManager(
                             writer = ui,
@@ -151,11 +136,11 @@ suspend fun main() {
                             userConfig = credentialsConfig,
                         ).start()
                     },
-                    'h' to {
+                    "h" to {
                         audioPlayer.play(Songs.HILFE)
                         HelpScene(writer = ui, reader = ui).helpDisplay()
                     },
-                    'q' to { exitProgram() },
+                    "q" to { exitProgram() },
                 )
 
             val logo = renderLogo("Abrechnung?", fontName = th.primaryFont)
@@ -168,10 +153,10 @@ suspend fun main() {
                 scene.addRow(th.success("o) ") + "Okay. How bad could it be?")
                 scene.addRow(th.error("q) " + "Quit."))
                 scene.display()
-                val char = ui.getRawCharIn('o', 'q')
+                val char = ui.getKeyIn("o", "q")
                 when (char) {
-                    'o' -> scene.clear()
-                    'q' -> exitProgram()
+                    "o" -> scene.clear()
+                    "q" -> exitProgram()
                 }
             }
 
@@ -198,15 +183,15 @@ suspend fun main() {
                 val menu =
                     Panel(
                         grid {
-                            stdMenuRow('g', "generate invoice")
-                            stdMenuRow('m', "manage unpaid invoices")
-                            stdMenuRow('r', "register new recipient")
-                            stdMenuRow('u', "update recipient information")
-                            stdMenuRow('r', "reporting")
-                            stdMenuRow('c', "configuration of self")
-                            stdMenuRow('s', "app settings")
-                            stdMenuRow('h', "help")
-                            stdMenuRow('q', "quit", th.error)
+                            stdMenuRow("g", "generate invoice")
+                            stdMenuRow("m", "manage unpaid invoices")
+                            stdMenuRow("r", "register new recipient")
+                            stdMenuRow("u", "update recipient information")
+                            stdMenuRow("e", "reporting")
+                            stdMenuRow("c", "configuration of self")
+                            stdMenuRow("s", "app settings")
+                            stdMenuRow("h", "help")
+                            stdMenuRow("q", "quit", th.error)
                         },
                         title = Text(th.secondary("What do you want to do?")),
                         padding = Padding(1, 3, 1, 3),
@@ -218,7 +203,7 @@ suspend fun main() {
                 scene.display()
 
                 try {
-                    val key: Char = ui.getRawCharIn(actions.keys)
+                    val key: String = ui.getKeyIn(actions.keys)
                     try {
                         coroutineScope { actions[key]!!.invoke() }
                     } catch (_: ExitSignal) {

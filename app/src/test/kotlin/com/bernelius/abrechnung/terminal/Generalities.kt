@@ -8,7 +8,7 @@ import kotlin.time.Duration
 
 class MockReader(
     val inputs: List<String>,
-    val rawChars: List<Char> = emptyList(),
+    val rawChars: List<String> = emptyList(),
     var i: Int = 0,
     var rawI: Int = 0,
 ) : InputReader {
@@ -20,8 +20,10 @@ class MockReader(
         mask: Boolean,
     ): String = if (i < inputs.size) inputs[i++] else ""
 
-    override fun getRawCharIn(vararg allowed: Char): Char =
+    override fun getKeyIn(allowed: Set<String>): String =
         if (rawI < rawChars.size && rawChars[rawI] in allowed) rawChars[rawI++] else error("No valid input supplied")
+
+    override fun getKeyIn(vararg allowed: String): String = getKeyIn(allowed.toSet())
 
     override fun waitForEnter() {
         return

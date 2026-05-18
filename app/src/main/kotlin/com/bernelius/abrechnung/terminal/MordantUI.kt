@@ -76,7 +76,7 @@ interface InputReader {
     ): String
 
     fun getKeyIn(allowed: Set<String>): String
-    fun getRawCharIn(vararg allowed: Char): Char
+    fun getKeyIn(vararg allowed: String): String
 
     fun waitForEnter()
 }
@@ -300,28 +300,7 @@ class MordantUI(
                 }.first()
         }
 
-    override fun getRawCharIn(vararg allowed: Char): Char = getRawCharIn(allowed.toSet())
-
-    fun getRawCharIn(allowed: Set<Char>): Char {
-        val key =
-
-            runBlocking {
-                t
-                    .receiveKeyEventsFlow()
-                    .mapNotNull { event ->
-                        if (event.isCtrlC) {
-                            throw ExitSignal()
-                        }
-                        if (event.key.length == 1) {
-                            val c = event.key.first()
-                            if (c in allowed) c else null
-                        } else {
-                            null
-                        }
-                    }.first()
-            }
-        return key
-    }
+    override fun getKeyIn(vararg allowed: String): String = getKeyIn(allowed.toSet())
 
     override fun readAndCenter(
         prefill: String,

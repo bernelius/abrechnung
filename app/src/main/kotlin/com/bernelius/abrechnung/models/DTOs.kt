@@ -88,7 +88,7 @@ data class RecipientDTO(
     var postal: String = "",
     var email: String = "",
     var orgNumber: String? = null,
-    var keybind: Char? = null,
+    var keybind: String? = null,
 ) {
     companion object {
         val companyNameValidators = arrayOf(isNotBlank)
@@ -145,6 +145,9 @@ data class InvoiceDTO(
 
     val total: Double
         get() = (subtotal + vatAmount).toBigDecimal().setScale(2, RoundingMode.HALF_UP).toDouble()
+
+    val totalExVat: Double
+        get() = subtotal
 }
 
 data class InvoiceItemDTO(

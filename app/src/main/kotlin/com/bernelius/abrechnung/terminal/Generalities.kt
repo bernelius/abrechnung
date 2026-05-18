@@ -13,13 +13,13 @@ import com.github.ajalt.mordant.widgets.Text
 import com.bernelius.abrechnung.theme.Theme as th
 
 data class StyledMenuOption(
-    val key: Char,
+    val key: String,
     val style: TextStyle,
     val value: String,
 )
 
 data class UnstyledMenuOption(
-    val key: Char,
+    val key: String,
     val value: String,
 )
 
@@ -40,7 +40,7 @@ class LoopScope(
 
 internal fun highlightKeyInText(
     style: TextStyle?,
-    key: Char,
+    key: String,
     text: String,
     capitalize: Boolean = true,
     ignoreCaseOnKeyComparison: Boolean = true,
@@ -49,7 +49,7 @@ internal fun highlightKeyInText(
     val out = StringBuilder()
     for (i in text.indices) {
         val l = text[i]
-        if (l.equals(key, ignoreCase = ignoreCaseOnKeyComparison)) {
+        if (l.toString().equals(key, ignoreCase = ignoreCaseOnKeyComparison)) {
             val styledChar =
                 l.toString().let {
                     if (capitalize) it.uppercase() else it
@@ -64,7 +64,7 @@ internal fun highlightKeyInText(
 }
 
 fun GridBuilder.stdMenuRow(
-    key: Char,
+    key: String,
     text: String,
     style: TextStyle = th.primary,
 ) {

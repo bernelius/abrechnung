@@ -32,11 +32,11 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import com.bernelius.abrechnung.theme.Theme as th
 
-fun createKeybinds(allRecipients: List<RecipientDTO>): CharArray {
+fun createKeybinds(allRecipients: List<RecipientDTO>): Array<String> {
     allRecipients.forEachIndexed { index, recipient ->
         recipient.keybind = mapIntToHotkey(index)
     }
-    return allRecipients.map { it.keybind!! }.toCharArray()
+    return allRecipients.map { it.keybind!! }.toTypedArray()
 }
 
 class InvoiceCreator(
@@ -188,14 +188,14 @@ class InvoiceCreator(
                 ),
             )
             mainScene.display()
-            val choice = reader.getRawCharIn('y', 'n')
+            val choice = reader.getKeyIn("y", "n")
             when (choice) {
-                'y' -> {
+                "y" -> {
                     mainScene.removeLast()
                     exit()
                 }
 
-                'n' -> {
+                "n" -> {
                     mainScene.replaceRow(
                         idx,
                         createVatGrid(
@@ -306,7 +306,7 @@ class InvoiceCreator(
         mainScene.addRow("Choose your target.")
         mainScene.display()
         mainScene.removeLast(3)
-        var choice = reader.getRawCharIn(*allRecipientKeybinds)
+        var choice = reader.getKeyIn(*allRecipientKeybinds)
         val recipient = allRecipients.find { it.keybind == choice } ?: error("FATAL: Could not find recipient")
 
         val vatDateConfig = VatDateConfigDTO(config.vatRate, 0, config.dueDateOffset.toLong())
@@ -337,12 +337,12 @@ class InvoiceCreator(
 
         mainScene.display()
 
-        choice = reader.getRawCharIn('y', 'n')
+        choice = reader.getKeyIn("y", "n")
         mainScene.removeLast(2)
         when (choice) {
-            'y' -> {}
+            "y" -> {}
 
-            'n' -> {
+            "n" -> {
                 editDefaults(vatDateConfig)
                 invoice.vatRate = vatDateConfig.vatRate
                 invoice.invoiceDate = today.plusDays(vatDateConfig.invoiceDateOffset)
@@ -395,31 +395,31 @@ class InvoiceCreator(
             mainScene.addRow()
             mainScene.addRow(explanations)
             mainScene.display()
-            val choice = reader.getRawCharIn('y', 'm', 'd', 'n', 'c', 'q')
+            val choice = reader.getKeyIn("y", "m", "d", "n", "c", "q")
             discountRound = false
             mainScene.removeLast(5)
             when (choice) {
-                'y' -> {
+                "y" -> {
                     invoice.invoiceItems = invoice.invoiceItems.plus(invoiceItem)
                     break
                 }
 
-                'm' -> {
+                "m" -> {
                     invoice.invoiceItems = invoice.invoiceItems.plus(invoiceItem)
                     invoiceItem = InvoiceItemDTO()
                     continue
                 }
 
-                'd' -> {
+                "d" -> {
                     discountRound = true
                     continue
                 }
 
-                'n' -> {
+                "n" -> {
                     continue
                 }
 
-                'c' -> {
+                "c" -> {
                     if (invoice.invoiceItems.isEmpty()) {
                         return exitToMainMenu(
                             writer,
@@ -430,7 +430,7 @@ class InvoiceCreator(
                     break
                 }
 
-                'q' -> {
+                "q" -> {
                     return exitToMainMenu(writer, reader, th.error("Cancelled by user."))
                 }
             }

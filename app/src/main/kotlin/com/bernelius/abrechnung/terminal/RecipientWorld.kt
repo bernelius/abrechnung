@@ -186,9 +186,9 @@ class RecipientManager(
             scene.addRow()
 
             scene.display()
-            var rawChar = reader.getRawCharIn('y', 'n')
+            var rawChar = reader.getKeyIn("y", "n")
             when (rawChar) {
-                'y' -> {
+                "y" -> {
                     try {
                         writer.withLoading(
                             { addRecipientWithCacheUpdate(recipient) },
@@ -204,7 +204,7 @@ class RecipientManager(
                     }
                 }
 
-                'n' -> {
+                "n" -> {
                     scene.replaceRow(idx, singleRecipientGrid(recipient))
                 }
             }
@@ -228,8 +228,8 @@ class RecipientManager(
         scene.addRow("Choose your target.")
         scene.display()
         scene.removeLast(3)
-        val choice = reader.getRawCharIn(*allRecipientKeybinds, 'q')
-        if (choice == 'q') {
+        val choice = reader.getKeyIn(*allRecipientKeybinds, "q")
+        if (choice == "q") {
             return
         }
         recipient =
@@ -261,9 +261,9 @@ class RecipientManager(
             scene.addRow()
             scene.display()
             scene.removeLast(2)
-            var rawChar = reader.getRawCharIn('y', 'n')
+            var rawChar = reader.getKeyIn("y", "n")
             when (rawChar) {
-                'y' -> {
+                "y" -> {
                     try {
                         writer.withLoading(
                             { updateRecipientWithCacheUpdate(recipient) },
@@ -279,7 +279,7 @@ class RecipientManager(
                     exit()
                 }
 
-                'n' -> {
+                "n" -> {
                     scene.replaceRow(idx, singleRecipientGrid(recipient))
                 }
             }

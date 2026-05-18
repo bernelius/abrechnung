@@ -39,7 +39,7 @@ class UserConfigManager(
     fun linearUserConfigGrid(
         user: UserConfigDTO,
         padding: Boolean = true,
-        current: Char? = null,
+        current: String? = null,
     ): Widget =
         grid {
             column(0) {
@@ -54,42 +54,42 @@ class UserConfigManager(
                 row("", "")
             }
             val nameRow =
-                if (current == 'n') {
+                if (current == "n") {
                     th.primary(" • ")
                 } else {
                     "   "
                 } + "Name:"
             row(nameRow, user.name)
             val addressRow =
-                if (current == 'a') {
+                if (current == "a") {
                     th.primary(" • ")
                 } else {
                     "   "
                 } + "Address:"
             row(addressRow, user.address)
             val postalRow =
-                if (current == 'd') {
+                if (current == "d") {
                     th.primary(" • ")
                 } else {
                     "   "
                 } + "Zip/City:"
             row(postalRow, user.postal)
             val emailRow =
-                if (current == 'e') {
+                if (current == "e") {
                     th.primary(" • ")
                 } else {
                     "   "
                 } + "e-mail addr:"
             row(emailRow, user.email)
             val accountNumberRow =
-                if (current == 'b') {
+                if (current == "b") {
                     th.primary(" • ")
                 } else {
                     "   "
                 } + "Account #:"
             row(accountNumberRow, user.accountNumber)
             val orgNumberRow =
-                if (current == 'o') {
+                if (current == "o") {
                     th.primary(" • ")
                 } else {
                     "   "
@@ -99,33 +99,33 @@ class UserConfigManager(
                 row()
             }
             val smtpHostRow =
-                if (current == 's') {
+                if (current == "s") {
                     th.primary(" • ")
                 } else {
                     "   "
                 } + "SMTP Host:"
             user.smtpHost.takeUnless { it.isNullOrBlank() }?.let { row(smtpHostRow, it) }
             val smtpPortRow =
-                if (current == 'm') {
+                if (current == "m") {
                     th.primary(" • ")
                 } else {
                     "   "
                 } + "SMTP Port:"
             user.smtpPort.takeUnless { it.isNullOrBlank() }?.let { row(smtpPortRow, it) }
             val smtpUserRow =
-                if (current == 't') {
+                if (current == "t") {
                     th.primary(" • ")
                 } else {
                     "   "
                 } + "SMTP User:"
             user.smtpUser.takeUnless { it.isNullOrBlank() }?.let { row(smtpUserRow, it) }
             val emailPasswordRow =
-                if (current == 'p') {
+                if (current == "p") {
                     th.primary(" • ")
                 } else {
                     "   "
                 } + "e-mail passwd:"
-            if (user.emailPassword != null || current == 'p') {
+            if (user.emailPassword != null || current == "p") {
                 val passwordString = if (user.emailPassword != null) "Password registered" else ""
                 row(emailPasswordRow, passwordString)
             }
@@ -471,19 +471,19 @@ class UserConfigManager(
 
         navigationLoop {
             scene.display()
-            val actions: Map<Char, suspend () -> Unit> =
+            val actions: Map<String, suspend () -> Unit> =
                 mapOf(
-                    'n' to { changeCompanyName(scene, idx, keybinds = true) },
-                    'a' to { changeAddress(scene, idx, keybinds = true) },
-                    'd' to { changePostal(scene, idx, keybinds = true) },
-                    'e' to { changeEmail(scene, idx, keybinds = true) },
-                    'b' to { changeAccountNumber(scene, idx, keybinds = true) },
-                    'o' to { changeOrgNumber(scene, idx, keybinds = true) },
-                    's' to { changeSmtpHost(scene, idx, keybinds = true) },
-                    'm' to { changeSmtpPort(scene, idx, keybinds = true) },
-                    't' to { changeSmtpUser(scene, idx, keybinds = true) },
-                    'p' to { doubleValidatePassword(scene, idx, keybinds = true) },
-                    'v' to {
+                    "n" to { changeCompanyName(scene, idx, keybinds = true) },
+                    "a" to { changeAddress(scene, idx, keybinds = true) },
+                    "d" to { changePostal(scene, idx, keybinds = true) },
+                    "e" to { changeEmail(scene, idx, keybinds = true) },
+                    "b" to { changeAccountNumber(scene, idx, keybinds = true) },
+                    "o" to { changeOrgNumber(scene, idx, keybinds = true) },
+                    "s" to { changeSmtpHost(scene, idx, keybinds = true) },
+                    "m" to { changeSmtpPort(scene, idx, keybinds = true) },
+                    "t" to { changeSmtpUser(scene, idx, keybinds = true) },
+                    "p" to { doubleValidatePassword(scene, idx, keybinds = true) },
+                    "v" to {
                         if (userConfig.emailSemanticallyValid()) {
                             val emailConfig = userConfig.toEmailUserDTO()
 
@@ -503,7 +503,7 @@ class UserConfigManager(
                             scene.display()
                         }
                     },
-                    'w' to {
+                    "w" to {
                         val outcome = saveUserConfig()
                         if (outcome is Outcome.Error) {
                             MordantScene(writer).apply {
@@ -516,16 +516,16 @@ class UserConfigManager(
                         exit()
                     },
                     if (noCancel) {
-                        'c' to { }
+                        "c" to { }
                     } else {
-                        'c' to {
+                        "c" to {
                             userConfig = originalUserConfig
                             exit()
                         }
                     },
                 )
-            val choice = reader.getRawCharIn(*actions.keys.toCharArray())
-            if (choice != 'c' || !noCancel) {
+            val choice = reader.getKeyIn(*actions.keys.toTypedArray())
+            if (choice != "c" || !noCancel) {
                 scene.replaceRow(idx, linearUserConfigGrid(userConfig, current = choice))
                 scene.display()
             }
@@ -601,14 +601,14 @@ class UserConfigManager(
         )
         scene.display()
 
-        val choice = reader.getRawCharIn('y', 'n')
+        val choice = reader.getKeyIn("y", "n")
         when (choice) {
-            'y' -> {
+            "y" -> {
                 saveUserConfig()
                 return userConfig
             }
 
-            'n' -> {
+            "n" -> {
                 scene.replaceRow(idx, userConfigGrid(userConfig))
                 return this.start()
             }

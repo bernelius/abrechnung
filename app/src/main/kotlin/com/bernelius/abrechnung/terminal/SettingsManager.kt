@@ -15,7 +15,7 @@ class SettingsManager(
     private var configManager: ConfigManager,
 ) {
     fun themePanel(
-        boundThemes: Map<Char, String>,
+        boundThemes: Map<String, String>,
         currentTheme: String,
     ): Panel =
         Panel(
@@ -37,7 +37,7 @@ class SettingsManager(
             bottomTitleAlign = TextAlign.RIGHT,
         )
 
-    fun getThemeMap(): Map<Char, String> =
+    fun getThemeMap(): Map<String, String> =
         ConfigManager.themes
             .mapIndexed { index, theme ->
                 mapIntToHotkey(index) to theme
@@ -58,13 +58,13 @@ class SettingsManager(
         var themePanel = themePanel(themesWithBinds, currentTheme)
         val panelIdx = scene.addRow()
 
-        val themeOptions = themesWithBinds.keys.toCharArray()
+        val themeOptions = themesWithBinds.keys.toTypedArray()
         navigationLoop {
             scene.replaceRow(logoIdx, renderLogo("Systemzwang"))
             scene.replaceRow(panelIdx, themePanel(themesWithBinds, currentTheme))
             scene.display()
-            when (val choice = reader.getRawCharIn(*themeOptions, 'q')) {
-                'q' -> {
+            when (val choice = reader.getKeyIn(*themeOptions, "q")) {
+                "q" -> {
                     exit()
                 }
 

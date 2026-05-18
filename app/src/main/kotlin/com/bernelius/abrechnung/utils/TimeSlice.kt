@@ -3,12 +3,23 @@ package com.bernelius.abrechnung.utils
 import java.time.LocalDate
 
 
-class TimeSlice(
+internal class TimeSlice(
     val start: LocalDate,
     val end: LocalDate,
     var currentSlice: LocalDate = end,
     var zoomLevel: ZoomLevel = ZoomLevel.YEAR,
 ) {
+    val periodStart: LocalDate
+        get() = when (zoomLevel) {
+            ZoomLevel.YEAR -> LocalDate.of(currentSlice.year, 1, 1)
+            ZoomLevel.MONTH -> currentSlice.withDayOfMonth(1)
+        }
+    val periodEnd: LocalDate
+        get() = when (zoomLevel) {
+            ZoomLevel.YEAR -> LocalDate.of(currentSlice.year, 12, 31)
+            ZoomLevel.MONTH -> currentSlice.withDayOfMonth(currentSlice.lengthOfMonth())
+        }
+
     init {
         require(start <= end)
         require(currentSlice in start..end)
