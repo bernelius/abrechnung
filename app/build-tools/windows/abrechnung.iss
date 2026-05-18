@@ -27,7 +27,6 @@ ArchitecturesInstallIn64BitMode=x64compatible
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "german"; MessagesFile: "compiler:Languages\German.isl"
 
 [Messages]
 ConfirmUninstall=Are you sure you want to uninstall %1?
