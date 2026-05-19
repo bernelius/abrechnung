@@ -22,6 +22,8 @@ import java.io.PrintStream
 import kotlin.system.exitProcess
 import com.bernelius.abrechnung.theme.Theme as th
 
+val IS_WINDOWS = System.getProperty("os.name").contains("windows", ignoreCase = true)
+
 data class StartupData(
     val overdueState: Boolean,
     val credentialsConfig: UserConfigDTO,
@@ -71,13 +73,12 @@ suspend fun main() {
              * TODO: hack together a withloading version that also controls the output stream
              */
 
-            val scene =
-                MordantScene(ui).apply {
-                    addRow(
-                        Text("initializing..."),
-                    )
-                    display()
-                }
+            MordantScene(ui).apply {
+                addRow(
+                    Text("initializing..."),
+                )
+                display()
+            }
             val originalOut = System.out
             val originalErr = System.err
             val logDir = getLogDir()
@@ -148,14 +149,17 @@ suspend fun main() {
 
             System.setOut(originalOut)
 
-            if (ui.size.width < logoWidth) {
-                scene.addRow("This terminal window is too small. There will be be problems with the output.")
-                scene.addRow(th.success("o) ") + "Okay. How bad could it be?")
-                scene.addRow(th.error("q) " + "Quit."))
-                scene.display()
+            // windows is wonky on terminal launch, so we just ignore the size.
+            if (!IS_WINDOWS && ui.size.width < logoWidth) {
+                MordantScene(ui).apply {
+                    addRow("This terminal window is too small. There will be be problems with the output.")
+                    addRow(th.success("o) ") + "Okay. How bad could it be?")
+                    addRow(th.error("q) ") + "Quit.")
+                    display()
+                }
                 val char = ui.getKeyIn("o", "q")
                 when (char) {
-                    "o" -> scene.clear()
+                    "o" -> {}
                     "q" -> exitProgram()
                 }
             }
@@ -197,17 +201,18 @@ suspend fun main() {
                         padding = Padding(1, 3, 1, 3),
                     )
 
-                val scene = MordantScene(ui)
-                scene.addRow(renderLogo("Abrechnung?", th.primary, th.primaryFont))
-                scene.addRow(menu)
-                scene.display()
+                MordantScene(ui).apply {
+                    addRow(renderLogo("Abrechnung?", th.primary, th.primaryFont))
+                    addRow(menu)
+                    display()
+                }
 
                 try {
                     val key: String = ui.getKeyIn(actions.keys)
                     try {
                         coroutineScope { actions[key]!!.invoke() }
                     } catch (_: ExitSignal) {
-                    // without this, the app will exit out completely when ExitSignal is thrown
+                        // without this, the app will exit out completely when an inner ExitSignal is thrown
                     }
                 } catch (_: ExitSignal) {
                     exit()
