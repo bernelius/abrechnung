@@ -270,12 +270,6 @@ class ReportGridGenerator(
 
 
 class ReportManager(private val writer: Writer, private val reader: InputReader) {
-    // these are ordered by dueDate further upstream
-    val allInvoices = runBlocking { getAllInvoices() }
-    val generator = ReportGridGenerator(allInvoices, writer.t.size.height)
-
-
-
 
     suspend fun getAllInvoices(): List<InvoiceDTO> {
         return writer.withLoading(
@@ -286,6 +280,18 @@ class ReportManager(private val writer: Writer, private val reader: InputReader)
     }
 
     suspend fun mainMenu() {
+        // these are ordered by dueDate further upstream
+        val allInvoices = getAllInvoices()
+        if (allInvoices.isEmpty()) {
+            return exitToMainMenu(
+                writer,
+                reader,
+                message = "No paid invoices found. Nothing to report.",
+                logoText = "Inhaltslos",
+            )
+        }
+        val generator = ReportGridGenerator(allInvoices, writer.t.size.height)
+
         navigationLoop {
             val actions: Map<String, suspend () -> Unit> =
                 mapOf(
