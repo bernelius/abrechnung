@@ -33,7 +33,11 @@ fun sendMail(
                 put("mail.smtp.host", from.host)
                 put("mail.smtp.port", from.port.toString())
                 put("mail.smtp.auth", true.toString())
-                put("mail.smtp.starttls.enable", true.toString())
+                if (from.port == 465) {
+                    put("mail.smtp.ssl.enable", true.toString())
+                } else {
+                    put("mail.smtp.starttls.enable", true.toString())
+                }
                 put("mail.smtp.connectiontimeout", timeoutMillis.toString())
                 put("mail.smtp.timeout", timeoutMillis.toString())
                 put("mail.smtp.writetimeout", timeoutMillis.toString())

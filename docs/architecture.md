@@ -65,6 +65,7 @@
 ### 1. Entry Point (`App.kt`)
 
 The application starts at `main()` function which:
+- Sets `java.net.preferIPv4Stack=true` for VPN compatibility (avoids IPv6 routing issues common with VPNs)
 - Configures logging
 - Initializes the terminal UI (Mordant)
 - Sets up the database connection
@@ -235,7 +236,9 @@ The `Repository` object is a singleton that provides all data access operations:
 
 **Email (`mail/MailSender.kt`)**:
 - Jakarta Mail for SMTP
-- TLS/SSL support
+- TLS mode is chosen automatically based on port:
+  - Port **465**: implicit SSL (`mail.smtp.ssl.enable`)
+  - Any other port (e.g. **587**): STARTTLS (`mail.smtp.starttls.enable`)
 - Invoice PDF attachments
 - Custom email templates
 
@@ -280,6 +283,7 @@ The `Repository` object is a singleton that provides all data access operations:
   - Linux: `<xdg-user-dir DOCUMENTS>/Abrechnung/` (uses XDG user directories, falls back to `~/Documents/Abrechnung/`)
   - macOS: `~/Documents/Abrechnung/`
   - Override: `ABRECHNUNG_OUTPUT_DIR` environment variable
+- **IPv4 Stack Preference**: The application unconditionally sets `java.net.preferIPv4Stack=true` at startup to avoid IPv6 routing issues common with consumer VPNs
 
 ## Build System
 

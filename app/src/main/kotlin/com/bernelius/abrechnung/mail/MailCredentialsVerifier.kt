@@ -17,7 +17,11 @@ fun verifyEmailConfig(
         Properties().apply {
             put("mail.smtp.port", userConfig.port.toString())
             put("mail.smtp.auth", true.toString())
-            put("mail.smtp.starttls.enable", true.toString())
+            if (userConfig.port == 465) {
+                put("mail.smtp.ssl.enable", true.toString())
+            } else {
+                put("mail.smtp.starttls.enable", true.toString())
+            }
 
             put("mail.smtp.connectiontimeout", timeoutMillis.toString())
             put("mail.smtp.timeout", timeoutMillis.toString())
