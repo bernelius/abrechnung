@@ -60,8 +60,8 @@ class ReportGridGenerator(
     maxHeight: Int,
 ) {
     private val timeSlice = TimeSlice(
-        start = invoices.first().dueDate,
-        end = invoices.last().dueDate
+        start = invoices.first().invoiceDate,
+        end = invoices.last().invoiceDate
     )
 
     // we take rows from maxHeight because we need space for totals at the bottom and descriptors at the top
@@ -135,7 +135,7 @@ class ReportGridGenerator(
     }
 
     private fun getInvoicesInTimeSlice(): List<InvoiceDTO> {
-        return invoices.filter { timeSlice.periodStart <= it.dueDate && timeSlice.periodEnd >= it.dueDate }
+        return invoices.filter { timeSlice.periodStart <= it.invoiceDate && timeSlice.periodEnd >= it.invoiceDate }
     }
 
     private fun createChunks(
@@ -225,11 +225,11 @@ class ReportGridGenerator(
                         }
                         row {
                             length++
-                            cell("Invoice id")
+                            cell("Inv id")
                             cell("Recipient")
                             cell("Vat")
                             cell("Total")
-                            cell("Due Date")
+                            cell("Inv Date")
                         }
                     }
                     body {
@@ -240,7 +240,7 @@ class ReportGridGenerator(
                                 cell(item.recipient.companyName)
                                 cell(item.vatAmount)
                                 cell(item.total)
-                                cell(item.dueDate.format(DateTimeFormatter.ofPattern("d MMM")))
+                                cell(item.invoiceDate.format(DateTimeFormatter.ofPattern("d MMM")))
                             }
                         }
                     }
