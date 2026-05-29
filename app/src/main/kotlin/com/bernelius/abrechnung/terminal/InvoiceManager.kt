@@ -97,24 +97,31 @@ class InvoiceManager(
                     borderStyle = th.secondary
                     tableBorders = Borders.NONE
                     cellBorders = Borders.ALL
+                    // keybind
                     column(0) { width = ColumnWidth(priority = 1) }
-                    column(1) { width = ColumnWidth(priority = 1) }
+                    //invoice id
+                    column(1) {
+                        width = ColumnWidth(priority = 1)
+                        align = TextAlign.LEFT
+                    }
+                    // recipient name
                     column(2) {
                         width = ColumnWidth(priority = 2)
                         align = TextAlign.RIGHT
                     }
+                    // remaining days
                     column(3) {
                         width = ColumnWidth(priority = 1)
                         align = TextAlign.RIGHT
                     }
+                    // amount
                     column(4) { width = ColumnWidth(priority = 1) }
-                    column(5) { width = ColumnWidth(priority = 2) }
                     header {
                         row {
                             cell("") { cellBorders = Borders.BOTTOM }
+                            cell("Id") { cellBorders = Borders.BOTTOM }
                             cell("Recipient") {
                                 align = TextAlign.LEFT
-                                cellBorders = Borders.BOTTOM
                             }
                             cell("Due") { align = TextAlign.LEFT }
                             cell("Amount") { align = TextAlign.LEFT }
@@ -126,6 +133,7 @@ class InvoiceManager(
                         for (item in rows) {
                             row {
                                 cell(th.primary("${item.keybind})"))
+                                cell(item.invoiceId.toString())
                                 cell(item.recipientName)
                                 val tint = if (item.remainingDays < 0) th.error else th.norm
                                 val dayOrDays = if (abs(item.remainingDays) == 1) "day" else "days"
