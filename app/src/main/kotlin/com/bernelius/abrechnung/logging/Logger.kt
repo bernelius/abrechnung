@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.core.FileAppender
+import com.bernelius.abrechnung.utils.getEnv
 import com.bernelius.abrechnung.utils.getLogDir
 import org.slf4j.LoggerFactory
 import java.io.FileOutputStream
@@ -32,6 +33,8 @@ fun configureLogging() {
         }
 
     val rootLogger = context.getLogger("ROOT")
-    rootLogger.level = Level.WARN
+    rootLogger.level = getEnv("ABRECHNUNG_LOG_LEVEL")?.let {
+        Level.toLevel(it, Level.WARN)
+    }
     rootLogger.addAppender(fileAppender)
 }

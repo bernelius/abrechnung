@@ -23,8 +23,8 @@ abstract class ControlFlowSignal : Exception() {
     override fun fillInStackTrace(): Throwable = this
 }
 
-/** Signals that the application should terminate cleanly. */
-class ProgramExitSignal : ControlFlowSignal()
+/** Signals that the application should terminate with the given [exitCode]. */
+class ProgramExitSignal(val exitCode: Int = 0) : ControlFlowSignal()
 
 /** Signals that the current scene or input operation should be exited (e.g., user pressed Ctrl+C). */
 class ExitSignal : ControlFlowSignal()

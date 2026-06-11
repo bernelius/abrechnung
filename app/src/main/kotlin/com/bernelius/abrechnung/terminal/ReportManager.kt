@@ -2,8 +2,10 @@ package com.bernelius.abrechnung.terminal
 
 import com.bernelius.abrechnung.models.InvoiceDTO
 import com.bernelius.abrechnung.repository.Repository
+import com.bernelius.abrechnung.utils.Outcome
 import com.bernelius.abrechnung.utils.TimeSlice
 import com.bernelius.abrechnung.utils.TimeSlice.ZoomLevel
+import com.bernelius.abrechnung.utils.getOutputDir
 import com.github.ajalt.mordant.rendering.BorderType
 import com.github.ajalt.mordant.rendering.TextAlign
 import com.github.ajalt.mordant.rendering.Widget
@@ -13,7 +15,8 @@ import com.github.ajalt.mordant.table.table
 import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
-import kotlinx.coroutines.runBlocking
+import de.siegmar.fastcsv.writer.CsvWriter
+import org.slf4j.LoggerFactory
 import java.time.format.DateTimeFormatter
 import java.util.Locale.getDefault
 import kotlin.math.max
@@ -130,8 +133,60 @@ class ReportGridGenerator(
         )
     }
 
-    fun exportToCSV() {
+    fun exportToCSV(): Outcome {
+        try {
+            val logger = LoggerFactory.getLogger(this::class.java)
+            val start = timeSlice.periodStart
+            val sb = StringBuilder()
+            sb.append("abrechnung_")
+            sb.append(
+                when (zoomLevel) {
+                    ZoomLevel.MONTH -> {
+                        start.year.toString() + start.month.toString()
+                    }
 
+                    ZoomLevel.YEAR -> {
+                        start.year.toString()
+                    }
+                }
+            )
+            sb.append("_export.csv")
+            val path = getOutputDir().resolve("csv").resolve(sb.toString())
+            path.parent.toFile().mkdirs()
+            logger.info("Exporting CSV to $path")
+            CsvWriter.builder().build(path).use { writer ->
+                val invoices = getInvoicesInTimeSlice()
+                writer.writeRecord(
+                    "invoice id",
+                    "invoice date",
+                    "status",
+                    "total",
+                    "recipient id",
+                    "recipient name",
+                    "recipient email address",
+                    "vat rate",
+                    "vat amount",
+                    "currency",
+                )
+                for (inv in invoices) {
+                    writer.writeRecord(
+                        inv.id.toString(),
+                        inv.invoiceDate.toString(),
+                        inv.status,
+                        inv.total.toString(),
+                        inv.recipient.id.toString(),
+                        inv.recipient.companyName,
+                        inv.recipient.email,
+                        inv.vatRate.toString(),
+                        inv.vatAmount.toString(),
+                        inv.currency
+                    )
+                }
+            }
+            return Outcome.Success(path.toString())
+        } catch (e: Exception) {
+            return Outcome.Error(e.message.toString())
+        }
     }
 
     private fun getInvoicesInTimeSlice(): List<InvoiceDTO> {
@@ -297,7 +352,20 @@ class ReportManager(private val writer: Writer, private val reader: InputReader)
                 mapOf(
                     "y" to { generator.zoomToYear() },
                     "m" to { generator.zoomToMonth() },
-                    "e" to { generator.exportToCSV() },
+                    "e" to {
+                        val outcome = writer.withLoading({
+                            generator.exportToCSV()
+                        })
+                        MordantScene(writer).apply {
+                            val msg = when (outcome) {
+                                is Outcome.Success -> "Exported to ${outcome.value}"
+                                is Outcome.Error -> outcome.message
+                            }
+                            addRow(msg)
+                            display()
+                        }
+                        reader.waitForEnter()
+                    },
                     "ArrowLeft" to { generator.prevPeriod() },
                     "h" to { generator.prevPeriod() },
                     "ArrowRight" to { generator.nextPeriod() },

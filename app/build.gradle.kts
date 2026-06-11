@@ -48,6 +48,8 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-r2dbc:1.0.0")
     implementation("org.xerial:sqlite-jdbc:3.51.2.0")
     implementation("org.postgresql:postgresql:42.7.10")
+    // csv
+    implementation("de.siegmar:fastcsv:4.3.0")
     // logging
     implementation("ch.qos.logback:logback-classic:1.5.32")
     implementation("com.github.ajalt.mordant:mordant:3.0.2")

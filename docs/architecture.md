@@ -539,7 +539,7 @@ invoiceNumber = "Invoice Number"
 The application uses a signal-based approach for non-local control flow (scene navigation, program exit):
 - `ControlFlowSignal`: Abstract base class extending `Exception` (skips stack trace generation for performance)
 - `ExitSignal`: Exits current scene/navigation level (e.g., user presses Ctrl+C)
-- `ProgramExitSignal`: Terminates the entire application cleanly
+- `ProgramExitSignal`: Terminates the entire application with an optional exit code (defaults to 0)
 
 This pattern allows deep input handling code to unwind back to appropriate handlers without threading signal parameters through every function signature. Signals are caught at semantic boundaries (menu loops, main entry) where decisions are made.
 

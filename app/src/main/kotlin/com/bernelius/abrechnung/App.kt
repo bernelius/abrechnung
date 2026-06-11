@@ -16,7 +16,6 @@ import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
 import kotlinx.coroutines.*
-import org.postgresql.util.PSQLException
 import java.io.FileOutputStream
 import java.io.PrintStream
 import kotlin.system.exitProcess
@@ -90,12 +89,19 @@ suspend fun main() {
 
             try {
                 DatabaseFactory.init()
-            } catch (e: PSQLException) {
+            } catch (e: Exception) {
+                System.setOut(originalOut)
+                MordantScene(ui).apply {
+                    addRow(Text(th.error("Could not connect to database.")))
+                    addRow(e.message.toString())
+                    addRow()
+                    addRow("Press Enter to exit.")
+                    display()
+                }
+                e.printStackTrace()
                 System.setErr(originalErr)
-                System.err.println(
-                    "Could not connect to database. Please check your configuration. Full error: ${e.message}"
-                )
-                exitProcess(1)
+                ui.waitForEnter()
+                throw ProgramExitSignal(1)
             }
             audioPlayer.start()
             val startupData = loadStartupData()
@@ -219,7 +225,7 @@ suspend fun main() {
                 }
             }
         }
-    } catch (_: ProgramExitSignal) {
-        exitProcess(0)
+    } catch (exitSignal: ProgramExitSignal) {
+        exitProcess(exitSignal.exitCode)
     }
 }
