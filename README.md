@@ -7,24 +7,14 @@ Designed for freelancers and small businesses, with a retro aesthetic.
 
 ## Features
 
-- **Efficiency** - The fat has been trimmed away, leaving a minimal amount of impediments between you and a shipped invoice. Fill in the (tiny) form, hit yes, and you're done.
-- **Personality** - Abrechnung has interactive theme music composed by Bernelius and an interface that feels powerful and uncompromising.
 - **Invoice Generation** - Create PDF invoices that look like [this](./screenshots/abrechnung_invoice_example.png)
 - **Recipient Management** - Register and update customer information
 - **Invoice Management** - Track and manage unpaid invoices
 - **Email Integration** - Send invoices directly via email
+- **Efficiency** - Minimal amount of impediments between you and a shipped invoice. Fill in the (tiny) form, hit yes, and you're done.
+- **Background (foreground) music** - Working on invoices in complete silence is a bummer. Abrechnung has you covered with adaptive theme music composed by Bernelius.
 - **Multi-language Support** - [Output in any language, customizable](#language-structure)
 - **Theme Customization** - [Customizable color themes](#themes)
-
-## Tech Stack
-
-- **Kotlin** - Programming language
-- **Gradle** - Build system
-- **Mordant** - Terminal UI framework
-- **Exposed** - SQL framework
-- **OpenPDF** - PDF generation
-- **Jakarta Mail** - Email sending
-- **LWJGL/OpenAL** - Audio playback
 
 ## Requirements
 
@@ -225,11 +215,11 @@ There is an in-memory TTL cache (5 mins) and async requests wherever I found it 
 
 Generated PDF invoices are saved to a platform-specific documents directory:
 
-| Operating System | Default Output Location                                          |
-| ---------------- | ---------------------------------------------------------------- |
-| **Windows**      | `<localized Documents folder>\Abrechnung\` (e.g., `Documents`, `Dokumente`, `Dokumenter`) |
+| Operating System | Default Output Location                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Windows**      | `<localized Documents folder>\Abrechnung\` (e.g., `Documents`, `Dokumente`, `Dokumenter`)                   |
 | **Linux**        | `<xdg-user-dir DOCUMENTS>/Abrechnung/` (uses XDG user directories, falls back to `~/Documents/Abrechnung/`) |
-| **MacOS**        | `~/Documents/Abrechnung/`                                        |
+| **MacOS**        | `~/Documents/Abrechnung/`                                                                                   |
 
 On Windows, the app automatically detects the localized name of your Documents folder (e.g., "Dokumente" on German Windows, "Dokumenter" on Norwegian Windows).  
 On Linux, the app uses the `xdg-user-dir` command to get the localized Documents path, falling back to `~/Documents/Abrechnung/` if not available.  
@@ -272,6 +262,15 @@ just run-native
 ```
 
 See the [justfile](./justfile) for more commands.
+
+## Tech Stack
+
+- **Kotlin** - Programming language
+- **Mordant** - Terminal UI framework
+- **Exposed** - SQL framework (SQLite/Postgres supported)
+- **OpenPDF** - PDF generation
+- **Jakarta Mail** - Email sending
+- **LWJGL/OpenAL** - Audio playback
 
 ### License
 
