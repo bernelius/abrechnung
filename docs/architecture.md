@@ -287,6 +287,14 @@ The `Repository` object is a singleton that provides all data access operations:
 
 ## Build System
 
+**Development Environment (devenv):**
+- `devenv.nix` defines the reproducible development shell
+- `devenv.yaml` pins the nixpkgs input
+- Provided tooling: Temurin JDK 26, `libpulseaudio`, and the gcc C++ runtime libraries
+- `enterShell` exports `LD_LIBRARY_PATH` so dynamically linked audio/native libraries resolve correctly
+- Enter the shell with `devenv shell` or via direnv (`.envrc` contains `use devenv`)
+- `devenv.lock` pins the resolved inputs (generated, committed)
+
 **Gradle Configuration:**
 - Kotlin DSL (`build.gradle.kts`)
 - Shadow JAR for fat JAR creation
