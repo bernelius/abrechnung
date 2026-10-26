@@ -288,6 +288,7 @@ class MordantUI(
                 }
         }
     }
+
     override fun getKeyIn(allowed: Set<String>) =
         runBlocking {
             t.receiveKeyEventsFlow()
@@ -302,12 +303,21 @@ class MordantUI(
 
     override fun getKeyIn(vararg allowed: String): String = getKeyIn(allowed.toSet())
 
+    private fun enableBarCursor() {
+        t.rawPrint("\u001B[5 q")
+    }
+
+    private fun restoreDefaultCursor() {
+        t.rawPrint("\u001B[0 q")
+    }
+
     override fun readAndCenter(
         prefill: String,
         pos: Int?,
         mask: Boolean,
     ): String {
         val buffer = StringBuilder(prefill)
+        var bufferPos = buffer.length
 
         val rawMode = rawTerminal.enterRawMode()
 
@@ -318,7 +328,9 @@ class MordantUI(
                 }
             }
 
-            do {
+            enableBarCursor()
+
+            while (true) {
                 val width = t.size.width
                 val line =
                     if (mask) {
@@ -329,6 +341,9 @@ class MordantUI(
                 val padding = (width - line.length) / 2
                 t.print("\r" + " ".repeat(width))
                 t.print("\r" + " ".repeat(padding.coerceAtLeast(0)) + line)
+                t.cursor.move {
+                    left(buffer.length - bufferPos)
+                }
                 t.cursor.show()
                 val event =
                     runBlocking {
@@ -342,24 +357,53 @@ class MordantUI(
                         break
                     }
 
+                    "ArrowLeft" -> {
+                        if (bufferPos > 0) {
+                            bufferPos--
+                        }
+                    }
+
+                    "ArrowRight" -> {
+                        if (bufferPos < buffer.length) {
+                            bufferPos++
+                        }
+                    }
+
                     // backspace
                     "Backspace" -> {
-                        if (buffer.isNotEmpty()) {
-                            buffer.deleteCharAt(buffer.lastIndex)
+                        if (bufferPos > 0) {
+                            buffer.deleteCharAt(bufferPos - 1)
+                            bufferPos--
                         }
+                    }
+
+                    "Delete" -> {
+                        if (bufferPos < buffer.length) {
+                            buffer.deleteCharAt(bufferPos)
+                        }
+                    }
+
+                    "Home" -> {
+                        bufferPos = 0
+                    }
+
+                    "End" -> {
+                        bufferPos = buffer.length
                     }
 
                     else -> {
                         if (key.length == 1) {
                             // if (!Character.isISOControl(key[0])) {
                             // I think this is not needed now?
-                            buffer.append(key)
+                            buffer.insert(bufferPos, key)
+                            bufferPos += key.length
                             // }
                         }
                     }
                 }
-            } while (true)
+            }
         } finally {
+            restoreDefaultCursor()
             t.cursor.hide()
             t.cursor.move {
                 startOfLine()

@@ -3,15 +3,20 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { self, nixpkgs }:
+  outputs =
+    { self, nixpkgs }:
     let
       inherit (nixpkgs) lib;
       version = lib.trim (builtins.readFile ./VERSION);
-      systems = [ "x86_64-linux" "aarch64-linux" ];
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
       forAllSystems = f: lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
     in
     {
-      packages = forAllSystems (pkgs:
+      packages = forAllSystems (
+        pkgs:
         let
           jdk = pkgs.javaPackages.compiler.temurin-bin.jdk-25;
 
@@ -30,7 +35,10 @@
             inherit version;
             src = ./.;
 
-            nativeBuildInputs = [ jdk pkgs.cacert ];
+            nativeBuildInputs = [
+              jdk
+              pkgs.cacert
+            ];
 
             buildPhase = ''
               export HOME=$(mktemp -d)
@@ -67,7 +75,11 @@
             src = ./.;
 
             nativeBuildInputs = [ pkgs.makeWrapper ];
-            buildInputs = [ jdk pkgs.libpulseaudio pkgs.alsa-lib ];
+            buildInputs = [
+              jdk
+              pkgs.libpulseaudio
+              pkgs.alsa-lib
+            ];
 
             buildPhase = ''
               export HOME=$(mktemp -d)
@@ -90,7 +102,12 @@
                 --add-flags "--enable-native-access=ALL-UNNAMED" \
                 --add-flags "--sun-misc-unsafe-memory-access=allow" \
                 --add-flags "-jar $out/share/java/abrechnung-all.jar" \
-                --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ pkgs.libpulseaudio pkgs.alsa-lib ]}
+                --prefix LD_LIBRARY_PATH : ${
+                  lib.makeLibraryPath [
+                    pkgs.libpulseaudio
+                    pkgs.alsa-lib
+                  ]
+                }
             '';
 
             meta = with lib; {
@@ -107,12 +124,5 @@
         }
       );
 
-      devShells = forAllSystems (pkgs: {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            javaPackages.compiler.temurin-bin.jdk-25
-          ];
-        };
-      });
     };
 }

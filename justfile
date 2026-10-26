@@ -25,6 +25,8 @@ bump-version:
     fi
     version="${tag#v}"
     echo "$version" > VERSION
+    git add VERSION
+    git commit -m "Bump version to $version"
     git tag -a "$tag" -m "Release $tag"
     echo "VERSION set to $version"
     echo "Remember to git push --tags"
