@@ -65,6 +65,7 @@
 ### 1. Entry Point (`App.kt`)
 
 The application starts at `main()` function which:
+
 - Sets `java.net.preferIPv4Stack=true` for VPN compatibility (avoids IPv6 routing issues common with VPNs)
 - Configures logging
 - Initializes the terminal UI (Mordant)
@@ -74,6 +75,7 @@ The application starts at `main()` function which:
 - Enters the main navigation loop
 
 **Startup Data Loading:**
+
 - Loads user configuration from database
 - Loads all recipients sorted by frequency of use
 - Loads pending invoices to check for overdue status
@@ -81,6 +83,7 @@ The application starts at `main()` function which:
 
 **Main Menu Navigation:**
 Maps key presses to actions using a `Map<Char, suspend () -> Unit>` structure:
+
 - `g` - Generate invoice
 - `m` - Manage unpaid invoices
 - `r` - Register new recipient
@@ -111,6 +114,7 @@ The application follows a layered architecture pattern:
 ### 3. Terminal Layer (`terminal/`)
 
 **MordantUI (`MordantUI.kt`)**: Central terminal wrapper that provides:
+
 - Input/output handling
 - Terminal size detection
 - Loading states with async operations
@@ -118,6 +122,7 @@ The application follows a layered architecture pattern:
 - Input validation helpers
 
 **Scene Managers:**
+
 - `InvoiceCreator`: Manages the invoice creation flow
 - `InvoiceManager`: Handles viewing, marking as paid, deleting invoices
 - `RecipientWorld`: CRUD operations for customer management
@@ -126,6 +131,7 @@ The application follows a layered architecture pattern:
 - `HelpScene`: Help system with introductory guide
 
 **Terminology:**
+
 - **Scene**: A complete terminal screen/view
 - **Navigation Loop**: System for returning to previous screens
 - **Loading States**: Non-blocking async operations with visual feedback
@@ -135,27 +141,32 @@ The application follows a layered architecture pattern:
 The `Repository` object is a singleton that provides all data access operations:
 
 **Key Features:**
+
 - Centralized data access layer
 - Async operations using `suspendTransaction`
 - Caching integration for performance
 - Database-agnostic (supports both SQLite and PostgreSQL)
 
 **Invoice Operations:**
+
 - `saveInvoice()`: Creates new invoices with line items
 - `findInvoiceById()`: Retrieves single invoice
 - `findAllInvoices()`: Lists invoices with optional filtering
 - `markInvoiceAsPaid/Pending/Invalid()`: Status updates
 
 **Recipient Operations:**
+
 - `addRecipient()`: Create new customer
 - `updateRecipient()`: Modify existing customer
 - `findAllRecipientsSortFrequency()`: Sorted by usage frequency
 
 **Configuration Operations:**
+
 - `getUserConfig()`: Load user profile
 - `setUserConfig()`: Save user profile with encryption
 
 **Caching Strategy:**
+
 - `InvoiceCache`: 5-minute TTL for invoices
 - `RecipientCache`: 5-minute TTL for recipients
 - `UserConfigCache`: 5-minute TTL for user config
@@ -163,18 +174,21 @@ The `Repository` object is a singleton that provides all data access operations:
 ### 5. Database Layer (`database/`)
 
 **DatabaseFactory (`DatabaseFactory.kt`)**:
+
 - Supports SQLite (default) and PostgreSQL
 - Connection pooling with HikariCP
 - Database migrations with Flyway
 - Separate migration paths by database type
 
 **Schema (`Schema.kt`)**:
+
 - `UserConfigTable`: User profile, email config (encrypted fields)
 - `RecipientsTable`: Customer information
 - `InvoicesTable`: Invoice headers and metadata
 - `InvoiceItemsTable`: Line items per invoice
 
 **Encryption (`Encryption.kt`)**:
+
 - AES-256-GCM encryption for sensitive fields
 - Configurable via environment variables:
   - `ABRECHNUNG_KEY`: (minimum 16 chars)
@@ -183,6 +197,7 @@ The `Repository` object is a singleton that provides all data access operations:
 - Encrypted fields: bank account number, email password
 
 **Mappers (`Mappers.kt`)**:
+
 - Extension functions to map database rows to DTOs
 - Handles encrypted field decryption
 - Maintains separation between database and domain models
@@ -190,6 +205,7 @@ The `Repository` object is a singleton that provides all data access operations:
 ### 6. Models (`models/`)
 
 **Data Transfer Objects:**
+
 - `UserConfigDTO`: User profile information
 - `RecipientDTO`: Customer information
 - `InvoiceDTO`: Complete invoice with items
@@ -198,6 +214,7 @@ The `Repository` object is a singleton that provides all data access operations:
 - `EmailUserDTO`: Email credentials
 
 **Validation (`Validator.kt`)**:
+
 - Field validators for user input
 - Pre-built validators for common types
 - Custom validation rules for business logic
@@ -205,6 +222,7 @@ The `Repository` object is a singleton that provides all data access operations:
 ### 7. Configuration System (`config/`)
 
 **Theme System:**
+
 - TOML-based theme definitions
 - 8 built-in themes (`retro-glitch`, `blood-moon`, etc.)
 - Custom hex color values
@@ -213,6 +231,7 @@ The `Repository` object is a singleton that provides all data access operations:
 - Semantic colors (success, error, warning, info)
 
 **Language System:**
+
 - TOML-based language files
 - 2 built-in languages: English (`en`), Norwegian (`no`)
 - Customizable field labels for invoices
@@ -220,6 +239,7 @@ The `Repository` object is a singleton that provides all data access operations:
 - Invoice PDF text content
 
 **User Configuration:**
+
 - Stored in database (encrypted)
 - User profile: name, address, postal, org number
 - Email configuration: SMTP host, port, credentials
@@ -228,6 +248,7 @@ The `Repository` object is a singleton that provides all data access operations:
 ### 8. External Services Integration
 
 **PDF Generation (`PDF/InvoicePDFGenerator.kt`)**:
+
 - OpenPDF library for PDF creation
 - Custom fonts (Inter family)
 - A4 invoice format
@@ -235,6 +256,7 @@ The `Repository` object is a singleton that provides all data access operations:
 - Multi-currency and language support
 
 **Email (`mail/MailSender.kt`)**:
+
 - Jakarta Mail for SMTP
 - TLS mode is chosen automatically based on port:
   - Port **465**: implicit SSL (`mail.smtp.ssl.enable`)
@@ -243,6 +265,7 @@ The `Repository` object is a singleton that provides all data access operations:
 - Custom email templates
 
 **Audio (`audioplayer/`):**
+
 - LWJGL OpenAL for cross-platform audio
 - OGG Vorbis format for music
 - Crossfading between tracks
@@ -252,12 +275,14 @@ The `Repository` object is a singleton that provides all data access operations:
 ### 9. Caching Layer (`cache/`)
 
 **TTL-Cache Implementation:**
+
 - Time-based expiration (default: 5 minutes)
 - Async-aware cache operations
 - Invalidation on data modification
 - Reduces database queries for frequently accessed data
 
 **Cache Types:**
+
 - `InvoiceCache`: All invoice data
 - `RecipientCache`: Customer information
 - `UserConfigCache`: User configuration
@@ -288,6 +313,7 @@ The `Repository` object is a singleton that provides all data access operations:
 ## Build System
 
 **Development Environment (devenv):**
+
 - `devenv.nix` defines the reproducible development shell
 - `devenv.yaml` pins the nixpkgs input
 - Provided tooling: Temurin JDK 26, `libpulseaudio`, and the gcc C++ runtime libraries
@@ -295,7 +321,15 @@ The `Repository` object is a singleton that provides all data access operations:
 - Enter the shell with `devenv shell` or via direnv (`.envrc` contains `use devenv`)
 - `devenv.lock` pins the resolved inputs (generated, committed)
 
+**Version Management:**
+
+- The canonical version is stored in a plain `VERSION` file at the repository root (e.g., `0.1.3`)
+- `flake.nix` reads this file at evaluation time using `lib.trim (builtins.readFile ./VERSION)`
+- The version is passed to Gradle via `-Pversion=` in all Nix builds
+- `app/build.gradle.kts` reads the version with `providers.gradleProperty("version").orElse("1.0.0").get()`
+
 **Gradle Configuration:**
+
 - Kotlin DSL (`build.gradle.kts`)
 - Shadow JAR for fat JAR creation
 - Java 24 toolchain requirement (GraalVM vendor)
@@ -304,6 +338,7 @@ The `Repository` object is a singleton that provides all data access operations:
 - GraalVM Native Image support via `org.graalvm.buildtools.native` plugin
 
 **Plugins:**
+
 - `org.jetbrains.kotlin.jvm` 2.2.21
 - `org.jetbrains.kotlin.plugin.serialization` 2.3.20-RC2
 - `com.gradleup.shadow` 9.3.0
@@ -312,6 +347,7 @@ The `Repository` object is a singleton that provides all data access operations:
 - `org.jetbrains.kotlinx.kover` 0.9.8
 
 **Key Dependencies:**
+
 - Kotlin 2.2.21 with coroutines 1.8.0
 - Mordant 3.0.2 (Terminal UI)
 - Exposed 1.0.0 (Type-safe SQL)
@@ -322,6 +358,7 @@ The `Repository` object is a singleton that provides all data access operations:
 - Flyway 12.3.0 (Database migrations)
 
 **Resource Management:**
+
 - Fonts: Complete Inter font family (18pt, 24pt, 28pt)
 - Music: 4 OGG Vorbis theme songs
 - Figlet: 15+ ASCII art fonts for logo rendering
@@ -330,16 +367,19 @@ The `Repository` object is a singleton that provides all data access operations:
 
 **GraalVM Native Image Configuration:**
 Located at `app/src/main/resources/META-INF/native-image/native-image.properties`:
+
 ```properties
 # GraalVM Native Image configuration
 Args = --no-fallback --enable-url-protocols=https,http --enable-all-security-services --enable-native-access=ALL-UNNAMED
 ```
 
 Additional build arguments configured in `build.gradle.kts`:
+
 - `-J--sun-misc-unsafe-memory-access=allow` (suppresses LWJGL deprecation warnings)
 - Metadata repository disabled (versions >= 0.3.33 use incompatible format)
 
 **Custom Build Tasks:**
+
 - `buildInstaller` - Creates Windows installer using Inno Setup
   - Depends on: `nativeCompile`, `prepareWindowsResources`
   - Command-line defines: `MyAppVersion`, `MyBuildDir`
@@ -352,6 +392,7 @@ Additional build arguments configured in `build.gradle.kts`:
 ## Configuration File Structure
 
 **User Configuration (TOML):**
+
 ```toml
 [terminalConfig]
 theme = "retro-glitch"
@@ -365,6 +406,7 @@ language = "en"
 ```
 
 **Theme Files (`~/.config/abrechnung/themes/`):**
+
 ```toml
 name = "retro-glitch"
 primary = "#ff00ff"
@@ -378,6 +420,7 @@ primaryFont = "Big Money-ne"
 ```
 
 **Language Files (`~/.config/abrechnung/languages/`):**
+
 ```toml
 name = "en"
 headline = "INVOICE"
@@ -388,29 +431,34 @@ invoiceNumber = "Invoice Number"
 ## Security Architecture
 
 **Encryption at Rest:**
+
 - AES-256-GCM for sensitive fields
 - Password-derived key using PBKDF2
 - Environment variable-based key management
 - Graceful degradation with warning for missing keys
 
 **Data Locations:**
+
 - Configuration: `$XDG_CONFIG_HOME/abrechnung/` (or `~/.config/abrechnung/`)
 - Database: Platform-specific data directory (see below), configurable via `ABRECHNUNG_DB_URL`
 - Output: Platform-specific documents directory (see below), configurable via `ABRECHNUNG_OUTPUT_DIR`
 
 **Default Database Locations:**
+
 - Windows: `%APPDATA%\Abrechnung\data\abrechnung.db`
 - Linux: `~/.local/share/abrechnung/abrechnung.db`
 - macOS: `~/Library/Application Support/Abrechnung/abrechnung.db`
 - Override: Set `ABRECHNUNG_DATA_DIR` environment variable
 
 **Default Output Locations:**
+
 - Windows: `<localized Documents folder>\Abrechnung\` (auto-detects localized name like "Documents", "Dokumente", "Dokumenter" via registry query)
 - Linux: `<xdg-user-dir DOCUMENTS>/Abrechnung/` (uses `xdg-user-dir` command to get localized Documents path, falls back to `~/Documents/Abrechnung/` if not available)
 - macOS: `~/Documents/Abrechnung/`
 - Override: Set `ABRECHNUNG_OUTPUT_DIR` environment variable
 
 **Migration Strategy:**
+
 - Flyway for schema versioning
 - Database-specific migration paths
 - First-run automatic initialization
@@ -419,12 +467,14 @@ invoiceNumber = "Invoice Number"
 ## Testing Architecture
 
 **Test Structure:**
+
 - Uses JUnit 5
 - Test database lifecycle management
 - In-memory SQLite for testing
 - Automatic cleanup after tests
 
 **Test Database:**
+
 - `DatabaseFactory.initTestDatabase()`: Creates temporary DB
 - `DatabaseFactory.cleanupTestDatabase()`: Removes test DB
 - Isolated test environments
@@ -432,6 +482,7 @@ invoiceNumber = "Invoice Number"
 ## Deployment Options
 
 **JAR Distribution:**
+
 - Shadow JAR (`./gradlew shadowJar` or `just build`)
 - Self-contained with resources
 - Java 24+ with GraalVM required
@@ -439,6 +490,7 @@ invoiceNumber = "Invoice Number"
 - Run with: `java --enable-native-access=ALL-UNNAMED -jar app/build/libs/abrechnung-all.jar`
 
 **Native Compilation:**
+
 - Full GraalVM native-image support via Gradle plugin
 - Build: `./gradlew nativeCompile` or `just build-native`
 - Output: `app/build/native/nativeCompile/app`
@@ -452,6 +504,7 @@ invoiceNumber = "Invoice Number"
 - GraalVM Community edition support via `setupGraalVMCommunity` task (creates symlink for native-image)
 
 **Windows Native Compilation:**
+
 - Windows native executable: `abrechnung.exe`
 - Windows Terminal launcher: `launch.bat` (automatically generated during `nativeCompile`)
 - The launcher script uses Windows Terminal (`wt.exe`) with explicit Command Prompt profile
@@ -463,6 +516,7 @@ invoiceNumber = "Invoice Number"
 - All command-line arguments are passed through to the application
 
 **Windows Installer:**
+
 - Professional EXE installer created using Inno Setup v6
 - Build task: `./gradlew :app:buildInstaller -Pversion=x.y.z`
 - Requirements: Inno Setup installed on Windows build machine (ISCC on PATH)
@@ -484,6 +538,7 @@ invoiceNumber = "Invoice Number"
 - Note: Shortcuts and launcher use `launch.bat` to ensure Windows Terminal is used; `wt.exe` must be available in PATH
 
 **macOS Native Compilation:**
+
 - Native executable built with GraalVM native-image
 - Build: `./gradlew :app:nativeCompile` (same as Linux)
 - Output: `app/build/native/nativeCompile/abrechnung`
@@ -492,6 +547,7 @@ invoiceNumber = "Invoice Number"
 - First run: Users may need to right-click → "Open" to bypass Gatekeeper
 
 **CI/CD Native Builds:**
+
 - GitHub Actions workflow: `.github/workflows/build-native.yml`
 - Triggered on tag push (`v*`) or manual `workflow_dispatch`
 - Four parallel build jobs:
@@ -502,6 +558,7 @@ invoiceNumber = "Invoice Number"
 - All artifacts automatically attached to GitHub Releases
 
 **Database Options:**
+
 - Default: SQLite (embedded, zero-config)
   - Stored in platform-specific data directory (see `getDataDir()` in Utilities)
   - Windows: `%APPDATA%\Abrechnung\data\abrechnung.db`
@@ -511,6 +568,7 @@ invoiceNumber = "Invoice Number"
 - Migration path: Export/import utilities
 
 **Log Files:**
+
 - Platform-specific log directory (see `getLogDir()` in Utilities)
 - Windows: `%LOCALAPPDATA%\Abrechnung\logs\`
 - Linux: `~/.local/share/abrechnung/logs/`
@@ -520,6 +578,7 @@ invoiceNumber = "Invoice Number"
 - Override location: `ABRECHNUNG_LOG_DIR` environment variable
 
 **Build Commands (via justfile):**
+
 - `just build` - Build shadow JAR
 - `just build-native` - Build GraalVM native image
 - `just run` - Run JAR version
@@ -532,12 +591,14 @@ invoiceNumber = "Invoice Number"
 ## Async/Await Architecture
 
 **Coroutine Scope Management:**
+
 - Main scope: `Dispatchers.IO + SupervisorJob()`
 - Loading states: Non-blocking UI updates
 - Repository layer: All DB operations are suspending
 - Exception handling: Structured concurrency
 
 **Concurrency Patterns:**
+
 - `async/await` for parallel data loading
 - `coroutineScope` for structured concurrency
 - `suspendTransaction` for async database operations
@@ -545,6 +606,7 @@ invoiceNumber = "Invoice Number"
 
 **Control Flow Signals:**
 The application uses a signal-based approach for non-local control flow (scene navigation, program exit):
+
 - `ControlFlowSignal`: Abstract base class extending `Exception` (skips stack trace generation for performance)
 - `ExitSignal`: Exits current scene/navigation level (e.g., user presses Ctrl+C)
 - `ProgramExitSignal`: Terminates the entire application with an optional exit code (defaults to 0)
@@ -554,22 +616,26 @@ This pattern allows deep input handling code to unwind back to appropriate handl
 ## Extension Points
 
 **Adding New Themes:**
+
 1. Create TOML file in `~/.config/abrechnung/themes/`
 2. Define color palette and font
 3. Select in app settings UI
 
 **Adding New Languages:**
+
 1. Duplicate and rename existing language TOML
 2. Translate all field labels
 3. Set in config or app settings
 
 **Custom Invoice Fields:**
+
 1. Add to `InvoiceDTO` in `models/DTOs.kt`
 2. Update database schema with migration
 3. Modify `PDF/InvoicePDFGenerator.kt`
 4. Add UI prompts in `terminal/InvoiceCreator.kt`
 
 **Audio Integration:**
+
 1. Add OGG file to `resources/music/`
 2. Update `App.kt` `Songs` object
 3. Call `audioPlayer.play()` in appropriate scene

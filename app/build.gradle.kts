@@ -17,6 +17,8 @@ plugins {
     application
 }
 
+version = providers.gradleProperty("version").orElse("1.0.0").get()
+
 ktlint {
     version.set("1.8.0")
 }
@@ -88,8 +90,7 @@ dependencies {
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
-        vendor = JvmVendorSpec.GRAAL_VM
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -172,7 +173,7 @@ graalvmNative {
             imageName.set("abrechnung")
             javaLauncher.set(
                 javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(24))
+                    languageVersion.set(JavaLanguageVersion.of(25))
                     vendor.set(JvmVendorSpec.GRAAL_VM)
                 },
             )
@@ -397,6 +398,7 @@ tasks.register<Exec>("buildInstaller") {
 tasks {
     shadowJar {
         archiveBaseName.set("abrechnung")
+        archiveFileName.set("abrechnung-all.jar")
         mergeServiceFiles {
             include("META-INF/services/**")
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
