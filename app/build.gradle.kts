@@ -12,8 +12,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.3.20-RC2"
     id("com.gradleup.shadow") version "9.3.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
-    id("org.graalvm.buildtools.native") version "1.0.0"
-    id("org.jetbrains.kotlinx.kover") version "0.9.8"
+    id("org.graalvm.buildtools.native") version "1.1.17"
+    id("org.jetbrains.kotlinx.kover") version "0.9.11"
     application
 }
 
@@ -116,10 +116,13 @@ tasks.named<Test>("test") {
     val red = "\u001B[31m"
     val yellow = "\u001B[33m"
 
-    afterTest(
-        object : groovy.lang.Closure<Any>(this) {
-            @Suppress("UNCHECKED_CAST", "unused")
-            fun doCall(
+    addTestListener(
+        object : TestListener {
+            override fun beforeSuite(suite: TestDescriptor) {}
+
+            override fun beforeTest(testDescriptor: TestDescriptor) {}
+
+            override fun afterTest(
                 descriptor: TestDescriptor,
                 result: TestResult,
             ) {
@@ -135,13 +138,8 @@ tasks.named<Test>("test") {
                 val methodName = descriptor.displayName.substringBefore("(")
                 println("$color[$status]$reset $className.$methodName")
             }
-        },
-    )
 
-    afterSuite(
-        object : groovy.lang.Closure<Any>(this) {
-            @Suppress("UNCHECKED_CAST", "unused")
-            fun doCall(
+            override fun afterSuite(
                 descriptor: TestDescriptor,
                 result: TestResult,
             ) {
@@ -164,10 +162,6 @@ tasks.named<Test>("test") {
 }
 
 graalvmNative {
-    // Metadata repository disabled - versions >= 0.3.33 use new format incompatible with plugin 1.0.0
-    metadataRepository {
-        enabled.set(false)
-    }
     binaries {
         named("main") {
             imageName.set("abrechnung")
@@ -265,10 +259,13 @@ tasks.register<Exec>("setupGraalVMCommunity") {
     val nativeImageLink = binDir.resolve("native-image")
     val nativeImageReal = svmBinDir.resolve("native-image")
 
+    // Copy to a local val so the onlyIf lambda doesn't capture the build script (breaks configuration cache)
+    val isWindowsLocal = isWindows
+
     onlyIf {
         // Skip on Windows - native-image.cmd is already in bin/
         // Only create symlink if the real binary exists but the link doesn't
-        !isWindows && nativeImageReal.exists() && (!nativeImageLink.exists() || nativeImageLink.length() == 0L)
+        !isWindowsLocal && nativeImageReal.exists() && (!nativeImageLink.exists() || nativeImageLink.length() == 0L)
     }
 
     commandLine("ln", "-sf", nativeImageReal.absolutePath, nativeImageLink.absolutePath)
