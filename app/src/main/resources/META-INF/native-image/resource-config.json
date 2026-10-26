@@ -1,6 +1,9 @@
 {
   "resources": [
     {
+      "pattern": "logback\\.xml"
+    },
+    {
       "pattern": "db/migration/.*\\.sql"
     },
     {

@@ -268,5 +268,11 @@
     "allPublicConstructors": true,
     "allPublicMethods": true,
     "allPublicFields": true
+  },
+  {
+    "name": "ch.qos.logback.core.helpers.NOPAppender",
+    "allPublicConstructors": true,
+    "allPublicMethods": true,
+    "allPublicFields": true
   }
 ]

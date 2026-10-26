@@ -26,6 +26,8 @@
 │   │   └── Schema.kt                              # Database schema definitions
 │   ├── dateprovider/                              # Date/time abstraction
 │   ├── logging/                                   # Logging configuration
+│   │   ├── Logger.kt                              # Runtime logging setup (file appender)
+│   │   └── BuildTimeLogbackCleanup.kt             # GraalVM build-time logback cleanup
 │   ├── mail/                                      # Email integration
 │   ├── models/                                    # Data models and DTOs
 │   │   ├── DatePattern.kt                         # Date formatting
@@ -50,6 +52,7 @@
 │   ├── fonts/inter/                              # Font files
 │   ├── music/                                    # Audio files
 │   ├── flf/                                      # Figlet fonts
+│   ├── logback.xml                               # Quiet placeholder config (see GraalVM section)
 │   └── META-INF/native-image/                    # GraalVM native-image config
 ├── app/build-tools/                               # Build tooling
 │   └── windows/                                   # Windows-specific build files
@@ -66,10 +69,9 @@
 
 The application starts at `main()` function which:
 
-- Sets `java.net.preferIPv4Stack=true` for VPN compatibility (avoids IPv6 routing issues common with VPNs)
-- Configures logging
 - Initializes the terminal UI (Mordant)
-- Sets up the database connection
+- Configures logging programmatically (`configureLogging()` in `logging/Logger.kt`: file appender, level from `ABRECHNUNG_LOG_LEVEL`, stderr redirected to log file)
+- Initializes the database connection behind a loading spinner (`MordantUI.withLoading`), with a friendly error scene on connection failure
 - Starts the audio player
 - Loads startup data asynchronously (user config, recipients, invoices)
 - Enters the main navigation loop
@@ -379,13 +381,49 @@ Located at `app/src/main/resources/META-INF/native-image/native-image.properties
 
 ```properties
 # GraalVM Native Image configuration
-Args = --no-fallback --enable-url-protocols=https,http --enable-all-security-services --enable-native-access=ALL-UNNAMED
+Args = --no-fallback --enable-url-protocols=https,http --enable-native-access=ALL-UNNAMED -H:+AddAllCharsets
 ```
 
 Additional build arguments configured in `build.gradle.kts`:
 
 - `-J--sun-misc-unsafe-memory-access=allow` (suppresses LWJGL deprecation warnings)
-- Metadata repository disabled (versions >= 0.3.33 use incompatible format)
+- GraalVM reachability metadata repository enabled (provides config for third-party libraries)
+- `--initialize-at-build-time` for HikariCP and logback classes (see below)
+- `--initialize-at-run-time` for LWJGL classes (require actual audio hardware)
+
+**Logback in native images (stdout spam prevention):**
+
+Because HikariCP classes are initialized at build time, their static loggers trigger
+SLF4J/logback auto-configuration *during `nativeCompile`*, and the resulting
+`LoggerContext` is baked into the image heap. Without a config file, logback's fallback
+(`BasicConfigurator`) is root=DEBUG with a console appender on stdout — which used to
+spam HikariCP DEBUG output at every native binary start. The mitigation has three parts:
+
+1. `app/src/main/resources/logback.xml` — a placeholder config (root=WARN into a
+   `NOPAppender`) so the build-time auto-configuration bakes in a silent configuration.
+   The `NOPAppender` is registered in `reflect-config.json` because logback intentionally
+   re-runs auto-configuration at runtime in native images and instantiates it reflectively.
+2. `logging/BuildTimeLogbackCleanup.kt` — runs at build time (last entry in the
+   `--initialize-at-build-time` list) and discards auto-config leftovers that cannot be
+   baked into the image heap (status objects referencing the Joran XML parser, the parsed
+   XML model under `SAFE_JORAN_CONFIGURATION`).
+3. The real logging setup happens programmatically at runtime in `configureLogging()`
+   (`logging/Logger.kt`): file appender at `getLogDir()/abrechnung.log`, level from
+   `ABRECHNUNG_LOG_LEVEL` (default WARN), stderr redirected to `abrechnung-stderr.log`.
+
+**Reachability metadata (`META-INF/native-image/reachability-metadata.json`):**
+
+Agent/metadata-repository-format file with reflection, resource and foreign-function
+entries (initially added for LWJGL). Important caveat for its `resources` section:
+
+**Never register directory paths as resources** (e.g. a bare `db/migration/postgres`
+glob). A directory resource corrupts the auto-created directory node in the `resource:/`
+filesystem and breaks `Files.walk` on that subtree with `NoSuchFileException` — this is
+how `DatabaseFactory.extractMigrations()` enumerates migrations in native images.
+Register file contents via the regex patterns in `resource-config.json`
+(e.g. `db/migration/.*\.sql`, which covers both `postgres/` and `sqlite/`) and keep
+directory globs out of the reachability metadata. (Regression: postgres migration
+extraction failed at runtime while sqlite — registered only via the pattern — worked.)
 
 **Custom Build Tasks:**
 
@@ -588,7 +626,7 @@ invoiceNumber = "Invoice Number"
 - Windows: `%LOCALAPPDATA%\Abrechnung\logs\`
 - Linux: `~/.local/share/abrechnung/logs/`
 - macOS: `~/Library/Logs/Abrechnung/`
-- Files: `abrechnung.log`, `abrechnung-stdout.log`, `abrechnung-stderr.log`
+- Files: `abrechnung.log`, `abrechnung-stderr.log`
 - **Log files are overwritten on each app launch** (no rotation/history)
 - Override location: `ABRECHNUNG_LOG_DIR` environment variable
 

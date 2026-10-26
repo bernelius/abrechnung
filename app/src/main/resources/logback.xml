@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Placeholder configuration. Its only job is to exist:
+  logback classes are initialized at build time for the GraalVM native image
+  (see the initialize-at-build-time args in app/build.gradle.kts), which means
+  ContextInitializer.autoConfig() runs during nativeCompile. Without a config
+  file, logback falls back to BasicConfigurator (root=DEBUG, ConsoleAppender on
+  System.out) and that noisy configuration gets baked into the image heap,
+  spamming stdout (HikariCP DEBUG output) before main() even runs.
+
+  With this file present, the baked-in configuration is quiet (root=WARN into a
+  no-op appender). The NOP appender prevents logback's "no appenders present"
+  status warning that an appender-less root logger would print to the console.
+
+  The real logging configuration (file appender, ABRECHNUNG_LOG_LEVEL) is
+  applied programmatically at runtime in configureLogging() (logging/Logger.kt).
+
+  NOTE: XML comments must not contain double dashes. Keep it that way.
+-->
+<configuration>
+    <appender name="NOP" class="ch.qos.logback.core.helpers.NOPAppender"/>
+    <root level="WARN">
+        <appender-ref ref="NOP"/>
+    </root>
+</configuration>

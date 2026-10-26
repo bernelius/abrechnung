@@ -9,15 +9,12 @@ import com.bernelius.abrechnung.models.UserConfigDTO
 import com.bernelius.abrechnung.repository.Repository
 import com.bernelius.abrechnung.terminal.*
 import com.bernelius.abrechnung.utils.exitProgram
-import com.bernelius.abrechnung.utils.getLogDir
 import com.bernelius.abrechnung.utils.renderLogo
 import com.github.ajalt.mordant.table.grid
 import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
 import kotlinx.coroutines.*
-import java.io.FileOutputStream
-import java.io.PrintStream
 import kotlin.system.exitProcess
 import com.bernelius.abrechnung.theme.Theme as th
 
@@ -60,37 +57,17 @@ var terminalConfig = ConfigManager.loadConfig().terminalConfig
 suspend fun main() {
     try {
         MordantUI().use { ui ->
-            /*
-             * a full day of trying to get logback to cooperate in graalVM on startup left me with no option but to brute force this stream redirection.
-             * not pretty, but it's better than getting spammed with log messages from hikari
-             * (in stdout! what the crap... never found the root cause of this) when the app starts up.
-             * the shadowJar worked fine with the ui.withLoading() version, so it's still an option for non-graal builds.
-             * used to be ui.withLoading({ ...get all the lateinit vars... }) but now we do this instead.
-             *
-             * o beautiful spinner, thou shalt be missed.
-             *
-             * TODO: hack together a withloading version that also controls the output stream
-             */
+            configureLogging()
 
             MordantScene(ui).apply {
-                addRow(
-                    Text("initializing..."),
-                )
                 display()
             }
-            val originalOut = System.out
-            val originalErr = System.err
-            val logDir = getLogDir()
-            val logFile = FileOutputStream("$logDir/abrechnung-stdout.log", false)
-            System.setOut(PrintStream(logFile, true, "UTF-8"))
-            configureLogging()
 
             val audioPlayer = CrossfadingAudioPlayer()
 
             try {
-                DatabaseFactory.init()
+                ui.withLoading({ DatabaseFactory.init() }, message = "initializing")
             } catch (e: Exception) {
-                System.setOut(originalOut)
                 MordantScene(ui).apply {
                     addRow(Text(th.error("Could not connect to database.")))
                     addRow(e.message.toString())
@@ -99,12 +76,11 @@ suspend fun main() {
                     display()
                 }
                 e.printStackTrace()
-                System.setErr(originalErr)
                 ui.waitForEnter()
                 throw ProgramExitSignal(1)
             }
             audioPlayer.start()
-            val startupData = loadStartupData()
+            val startupData = ui.withLoading({ loadStartupData() }, message = "loading data")
             val appScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
             val mainSong = if (startupData.overdueState) Songs.FINSTERNIS else Songs.ABRECHNUNG
@@ -152,8 +128,6 @@ suspend fun main() {
 
             val logo = renderLogo("Abrechnung?", fontName = th.primaryFont)
             val logoWidth = logo.split("\n")[0].length
-
-            System.setOut(originalOut)
 
             // windows is wonky on terminal launch, so we just ignore the size.
             if (!IS_WINDOWS && ui.size.width < logoWidth) {

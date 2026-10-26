@@ -194,6 +194,10 @@ graalvmNative {
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.BasicStatusManager")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.util.COWArrayList")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.ConsoleAppender")
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.helpers.NOPAppender")
+            // Must be initialized last: discards the build-time auto-config leftovers
+            // (status objects, parsed XML model) that cannot be baked into the image heap.
+            buildArgs.add("--initialize-at-build-time=com.bernelius.abrechnung.logging.BuildTimeLogbackCleanup")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.OutputStreamAppender")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.encoder.LayoutWrappingEncoder")
             buildArgs.add("--initialize-at-build-time=ch.qos.logback.core.pattern.PatternLayoutEncoderBase")
@@ -227,7 +231,24 @@ graalvmNative {
             buildArgs.add("--initialize-at-run-time=org.lwjgl")
             buildArgs.add("--initialize-at-run-time=org.lwjgl.openal")
             buildArgs.add("--initialize-at-run-time=org.lwjgl.stb")
-            buildArgs.add("--initialize-at-run-time=org.lwjgl.system")
+            // Build-time init for system classes that generate bytecode bindings;
+            // this allows JNIBindingsImpl to be generated during image build
+            buildArgs.add("--initialize-at-build-time=org.lwjgl.system")
+            // Keep library loading and platform-specific classes at run time
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system.Library")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system.SharedLibrary")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system.SharedLibraryLoader")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system.DynamicLinkLoader")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system.windows")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system.linux")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system.macos")
+            buildArgs.add("--initialize-at-run-time=org.lwjgl.system.freebsd")
+
+            // Pass zlib library path explicitly for NixOS builds
+            val nativeImageZlibPath = System.getenv("NATIVE_IMAGE_ZLIB_PATH")
+            if (!nativeImageZlibPath.isNullOrEmpty()) {
+                buildArgs.add("-H:NativeLinkerOption=-L$nativeImageZlibPath")
+            }
         }
     }
 }
