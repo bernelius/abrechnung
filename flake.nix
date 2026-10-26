@@ -66,7 +66,7 @@
 
             outputHashAlgo = "sha256";
             outputHashMode = "recursive";
-            outputHash = "sha256-2LeqiMUIRTLRodCUrjKuMe4yoQ5uCsDDHyZ7C7FfEvU=";
+            outputHash = "sha256-BR2z9bQ3dpazH8WxDaWprIDdx2TnEXvAT3TBqF+k/u4=";
           };
 
           abrechnung = pkgs.stdenv.mkDerivation {
@@ -79,6 +79,7 @@
               jdk
               pkgs.libpulseaudio
               pkgs.alsa-lib
+              pkgs.stdenv.cc.cc.lib
             ];
 
             buildPhase = ''
@@ -106,6 +107,7 @@
                   lib.makeLibraryPath [
                     pkgs.libpulseaudio
                     pkgs.alsa-lib
+                    pkgs.stdenv.cc.cc.lib
                   ]
                 }
             '';
