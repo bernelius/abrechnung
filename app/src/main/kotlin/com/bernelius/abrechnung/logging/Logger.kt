@@ -35,6 +35,6 @@ fun configureLogging() {
     val rootLogger = context.getLogger("ROOT")
     rootLogger.level = getEnv("ABRECHNUNG_LOG_LEVEL")?.let {
         Level.toLevel(it, Level.WARN)
-    }
+    } ?: Level.WARN
     rootLogger.addAppender(fileAppender)
 }
