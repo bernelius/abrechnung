@@ -4,7 +4,7 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs =
-    { self, nixpkgs }:
+    { nixpkgs, ... }:
     let
       inherit (nixpkgs) lib;
       version = lib.trim (builtins.readFile ./VERSION);
@@ -13,6 +13,17 @@
         "aarch64-linux"
       ];
       forAllSystems = f: lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+
+      # Gradle version pinned by the project's wrapper. The nixpkgs Gradle used
+      # for the build must match it (asserted below).
+      wrapperGradleVersion =
+        let
+          line = lib.findFirst (lib.hasInfix "distributionUrl=") null (
+            lib.splitString "\n" (builtins.readFile ./gradle/wrapper/gradle-wrapper.properties)
+          );
+          match = builtins.match ".*gradle-([0-9]+\\.[0-9]+\\.[0-9]+)-bin\\.zip" line;
+        in
+        if match == null then null else builtins.head match;
     in
     {
       packages = forAllSystems (
@@ -20,80 +31,58 @@
         let
           jdk = pkgs.javaPackages.compiler.temurin-bin.jdk-25;
 
-          # Gradle 9.3.0 pinned by the project's wrapper, fetched deterministically.
-          gradle930 = pkgs.fetchzip {
-            url = "https://services.gradle.org/distributions/gradle-9.3.0-bin.zip";
-            hash = "sha256-NR2yq3V/BBm4n295eSrlY5eZ9eYpCkrqIsTqHOoJvSw=";
-          };
+          # Wrapped Gradle, pinned to the same version as the project's wrapper
+          # (gradle/wrapper/gradle-wrapper.properties), so nixpkgs updates can't
+          # silently change the build tool. The wrapper's setup hook manages
+          # GRADLE_USER_HOME, --no-daemon, and a reproducible-archives init
+          # script; mitm-cache provides reproducible dependency fetching.
+          # When bumping Gradle, update the wrapper too and prefetch the new
+          # distribution hash with:
+          #   nix store prefetch-file https://services.gradle.org/distributions/gradle-X.Y.Z-bin.zip
+          gradle =
+            (pkgs.gradle-packages.mkGradle {
+              version = "9.8.0";
+              hash = "sha256-uv1c6c+uoPvM/chDmhrEL71M2cidyamIIo2KJjmljmw=";
+              defaultJava = jdk;
+            }).wrapped;
 
-          gradleCmd = "${gradle930}/bin/gradle";
-
-          # Fixed-output derivation that prefetches all Gradle dependencies.
-          # The hash must be updated whenever build.gradle.kts or gradle/libs.versions.toml changes.
-          gradleDeps = pkgs.stdenvNoCC.mkDerivation {
-            pname = "abrechnung-gradle-deps";
-            inherit version;
-            src = ./.;
-
-            nativeBuildInputs = [
-              jdk
-              pkgs.cacert
-            ];
-
-            buildPhase = ''
-              export HOME=$(mktemp -d)
-              export GRADLE_USER_HOME=$HOME/.gradle
-              export JAVA_HOME=${jdk}
-
-              ${gradleCmd} --no-daemon :app:dependencies -Pversion=${version} > /dev/null 2>&1 || true
-              ${gradleCmd} --no-daemon :app:shadowJar -x test -Pversion=${version} > /dev/null 2>&1 || true
-            '';
-
-            installPhase = ''
-              mkdir -p $out/caches $out/wrapper
-              cp -r $GRADLE_USER_HOME/caches/modules-2 $out/caches/ 2>/dev/null || true
-              cp -r $GRADLE_USER_HOME/caches/transforms-2 $out/caches/ 2>/dev/null || true
-              cp -r $GRADLE_USER_HOME/caches/transforms-3 $out/caches/ 2>/dev/null || true
-              cp -r $GRADLE_USER_HOME/caches/jars-9 $out/caches/ 2>/dev/null || true
-              cp -r $GRADLE_USER_HOME/wrapper/dists $out/wrapper/ 2>/dev/null || true
-
-              # Normalize timestamps for reproducible hashing.
-              find $out -type f -exec touch -d '1970-01-01T00:00:00Z' {} +
-              find $out -type d -exec touch -d '1970-01-01T00:00:00Z' {} +
-              find $out -name '*.lock' -delete
-              find $out -name 'gc.properties' -delete
-            '';
-
-            outputHashAlgo = "sha256";
-            outputHashMode = "recursive";
-            outputHash = "sha256-BR2z9bQ3dpazH8WxDaWprIDdx2TnEXvAT3TBqF+k/u4=";
-          };
-
-          abrechnung = pkgs.stdenv.mkDerivation {
+          abrechnung = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
             pname = "abrechnung";
             inherit version;
             src = ./.;
 
-            nativeBuildInputs = [ pkgs.makeWrapper ];
-            buildInputs = [
-              jdk
-              pkgs.libpulseaudio
-              pkgs.alsa-lib
-              pkgs.stdenv.cc.cc.lib
+            nativeBuildInputs = [
+              gradle
+              pkgs.makeWrapper
             ];
 
-            buildPhase = ''
-              export HOME=$(mktemp -d)
-              export GRADLE_USER_HOME=$HOME/.gradle
-              export JAVA_HOME=${jdk}
+            # Gradle dependencies are locked in deps.json (URL -> hash) and served
+            # to the build through a local MITM proxy by the Gradle setup hook.
+            # Regenerate deps.json after dependency, plugin, or Gradle version
+            # changes with (run from the repository root):
+            #   nix build .#abrechnung.mitmCache.updateScript && ./result
+            mitmCache = gradle.fetchDeps {
+              pkg = finalAttrs.finalPackage;
+              data = ./deps.json;
+            };
 
-              # Restore cached dependencies and make them writable.
-              mkdir -p $GRADLE_USER_HOME/caches
-              cp -r ${gradleDeps}/caches/* $GRADLE_USER_HOME/caches/ 2>/dev/null || true
-              chmod -R +w $GRADLE_USER_HOME/caches
-
-              ${gradleCmd} --offline --no-daemon :app:shadowJar -x test -Pversion=${version}
+            gradleBuildTask = ":app:shadowJar";
+            # Task used by mitmCache.updateScript to fetch all dependencies
+            # (nixpkgs' default nixDownloadDeps Groovy task is broken on Gradle 9).
+            gradleUpdateTask = "nixDownloadAllDeps";
+            # Resolving all configurations captures Project state that the
+            # configuration cache cannot serialize (and Kover accesses
+            # Task.project at execution time). Disable the cache for the
+            # dependency update run only.
+            preGradleUpdate = ''
+              gradleFlagsArray+=("-Dorg.gradle.configuration-cache=false")
             '';
+            gradleFlags = [
+              "-Pversion=${version}"
+              # Toolchains must come from the JDK running Gradle, never from a
+              # (proxied) foojay download.
+              "-Dorg.gradle.java.installations.auto-download=false"
+            ];
 
             installPhase = ''
               mkdir -p $out/share/java
@@ -118,13 +107,15 @@
               platforms = platforms.linux;
               mainProgram = "abrechnung";
             };
-          };
+          });
         in
+        assert lib.assertMsg (gradle.version == wrapperGradleVersion) ''
+          flake.nix: pinned Gradle ${gradle.version} does not match gradle-wrapper.properties (${wrapperGradleVersion}).
+          Keep the two in sync: update the mkGradle pin above (prefetch the new zip hash) or fix the wrapper.'';
         {
           default = abrechnung;
-          abrechnung = abrechnung;
+          inherit abrechnung;
         }
       );
-
     };
 }

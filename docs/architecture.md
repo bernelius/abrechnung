@@ -328,11 +328,20 @@ The `Repository` object is a singleton that provides all data access operations:
 - The version is passed to Gradle via `-Pversion=` in all Nix builds
 - `app/build.gradle.kts` reads the version with `providers.gradleProperty("version").orElse("1.0.0").get()`
 
+**Nix Flake Packaging:**
+
+- `flake.nix` builds `packages.<system>.abrechnung` (`x86_64-linux`, `aarch64-linux`) using a Gradle pinned via `gradle-packages.mkGradle` (same version as `gradle/wrapper/gradle-wrapper.properties`); the wrapper's setup hook manages `GRADLE_USER_HOME` (temp dir), `--no-daemon`, and a default init script enabling reproducible archives (`preserveFileTimestamps = false`, `reproducibleFileOrder = true`)
+- The pinned Gradle version is asserted at evaluation time to match the wrapper; when bumping Gradle, update both the wrapper and the `mkGradle` version/hash (prefetch via `nix store prefetch-file https://services.gradle.org/distributions/gradle-X.Y.Z-bin.zip`)
+- Dependencies are locked in `deps.json` (URL → hash) at the repository root and served to the build through a local MITM proxy via `gradle.fetchDeps`; no Gradle cache directories enter the store
+- Regenerate `deps.json` after dependency, plugin, or Gradle version changes (run from the repository root; requires network, `nix-shell`, and bubblewrap): `nix build .#abrechnung.mitmCache.updateScript && ./result`
+- The update script resolves dependencies via the custom `nixDownloadAllDeps` Gradle task (`gradleUpdateTask` in `flake.nix`); nixpkgs' default Groovy `nixDownloadDeps` task relies on dynamic property fallback removed in Gradle 9. The update run disables the configuration cache via `preGradleUpdate`, since resolving all configurations captures `Project` state that the cache cannot serialize
+- Tests are not run in the Nix build (`doCheck` defaults to false)
+
 **Gradle Configuration:**
 
 - Kotlin DSL (`build.gradle.kts`)
 - Shadow JAR for fat JAR creation
-- Java 24 toolchain requirement (GraalVM vendor)
+- Java 25 toolchain requirement (GraalVM vendor)
 - ktlint for code formatting
 - Kover for code coverage
 - GraalVM Native Image support via `org.graalvm.buildtools.native` plugin
@@ -485,9 +494,15 @@ invoiceNumber = "Invoice Number"
 
 - Shadow JAR (`./gradlew shadowJar` or `just build`)
 - Self-contained with resources
-- Java 24+ with GraalVM required
+- Java 25+ with GraalVM required
 - Cross-platform (Linux, macOS, Windows)
 - Run with: `java --enable-native-access=ALL-UNNAMED -jar app/build/libs/abrechnung-all.jar`
+
+**Nix Flake:**
+
+- `nix build` (or `nix build .#abrechnung`) → `result/bin/abrechnung`
+- Linux only (`x86_64-linux`, `aarch64-linux`); wraps the shadow JAR with the Temurin JDK 25 runtime and audio libraries on `LD_LIBRARY_PATH`
+- Requires `deps.json` to be up to date (see "Nix Flake Packaging" in Build System)
 
 **Native Compilation:**
 

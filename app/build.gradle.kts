@@ -342,6 +342,17 @@ tasks.register("buildNativeImage") {
     dependsOn("nativeCompile")
 }
 
+// Resolve all dependency configurations; used by the Nix flake's dependency
+// lockfile updater (nixpkgs' init-deps.gradle nixDownloadDeps task relies on
+// Groovy dynamic property fallback that no longer works on Gradle 9).
+tasks.register("nixDownloadAllDeps") {
+    group = "build"
+    description = "Resolve all resolvable configurations (Nix gradle.fetchDeps update script)"
+    doLast {
+        configurations.filter { it.isCanBeResolved }.forEach { it.resolve() }
+    }
+}
+
 // Build installer using Inno Setup
 // Requires Inno Setup to be installed: https://jrsoftware.org/isinfo.php
 tasks.register<Exec>("buildInstaller") {
