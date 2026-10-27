@@ -7,14 +7,29 @@ import com.bernelius.abrechnung.dateprovider.SystemDateProvider
 import com.bernelius.abrechnung.logging.configureLogging
 import com.bernelius.abrechnung.models.UserConfigDTO
 import com.bernelius.abrechnung.repository.Repository
-import com.bernelius.abrechnung.terminal.*
+import com.bernelius.abrechnung.terminal.HelpScene
+import com.bernelius.abrechnung.terminal.InvoiceCreator
+import com.bernelius.abrechnung.terminal.InvoiceManager
+import com.bernelius.abrechnung.terminal.MordantScene
+import com.bernelius.abrechnung.terminal.MordantUI
+import com.bernelius.abrechnung.terminal.RecipientManager
+import com.bernelius.abrechnung.terminal.ReportManager
+import com.bernelius.abrechnung.terminal.SettingsManager
+import com.bernelius.abrechnung.terminal.UserConfigManager
+import com.bernelius.abrechnung.terminal.navigationLoop
+import com.bernelius.abrechnung.terminal.stdMenuRow
 import com.bernelius.abrechnung.utils.exitProgram
 import com.bernelius.abrechnung.utils.renderLogo
 import com.github.ajalt.mordant.table.grid
 import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel
 import com.github.ajalt.mordant.widgets.Text
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 import com.bernelius.abrechnung.theme.Theme as th
 
@@ -140,12 +155,14 @@ suspend fun main() {
                 val char = ui.getKeyIn("o", "q")
                 when (char) {
                     "o" -> {}
-                    "q" -> exitProgram()
+
+                    "q" -> {
+                        exitProgram()
+                    }
                 }
             }
 
             navigationLoop {
-
                 while (!credentialsConfig.isValid()) {
                     try {
                         HelpScene(writer = ui, reader = ui).helpDisplay(intro = true)

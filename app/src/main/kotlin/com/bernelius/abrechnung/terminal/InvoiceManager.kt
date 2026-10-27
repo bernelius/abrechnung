@@ -99,7 +99,7 @@ class InvoiceManager(
                     cellBorders = Borders.ALL
                     // keybind
                     column(0) { width = ColumnWidth(priority = 1) }
-                    //invoice id
+                    // invoice id
                     column(1) {
                         width = ColumnWidth(priority = 1)
                         align = TextAlign.LEFT

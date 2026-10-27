@@ -35,10 +35,18 @@ class ScrollbarGenerator(
         val table = grid.table
         val trackHeight = table.height
         val totalPages = grid.tables.size
-        val upTheme = if (grid.hasPrevious)
-            th.secondary else th.dim
-        val downTheme = if (grid.hasNext)
-            th.secondary else th.dim
+        val upTheme =
+            if (grid.hasPrevious) {
+                th.secondary
+            } else {
+                th.dim
+            }
+        val downTheme =
+            if (grid.hasNext) {
+                th.secondary
+            } else {
+                th.dim
+            }
 
         _scrollbar.append(upTheme("↑\n"))
         if (totalPages > 0) {
@@ -62,10 +70,11 @@ class ReportGridGenerator(
     val invoices: List<InvoiceDTO>,
     maxHeight: Int,
 ) {
-    private val timeSlice = TimeSlice(
-        start = invoices.first().invoiceDate,
-        end = invoices.last().invoiceDate
-    )
+    private val timeSlice =
+        TimeSlice(
+            start = invoices.first().invoiceDate,
+            end = invoices.last().invoiceDate,
+        )
 
     // we take rows from maxHeight because we need space for totals at the bottom and descriptors at the top
     val maxHeightAdjusted = maxHeight - 10
@@ -80,7 +89,6 @@ class ReportGridGenerator(
 
     val table: Table
         get() = tables[tableIndex]
-
 
     val hasNext: Boolean
         get() = tableIndex < tables.size - 1
@@ -126,11 +134,13 @@ class ReportGridGenerator(
         sumTotal = invoices.sumOf { it.total }
         sumExVat = invoices.sumOf { it.total - it.vatAmount }
         sumVat = invoices.sumOf { it.vatAmount }
-        tables = createTables(
-            createChunks(
-                invoices, rowHeight = ROW_HEIGHT
+        tables =
+            createTables(
+                createChunks(
+                    invoices,
+                    rowHeight = ROW_HEIGHT,
+                ),
             )
-        )
     }
 
     fun exportToCSV(): Outcome {
@@ -148,7 +158,7 @@ class ReportGridGenerator(
                     ZoomLevel.YEAR -> {
                         start.year.toString()
                     }
-                }
+                },
             )
             sb.append("_export.csv")
             val path = getOutputDir().resolve("csv").resolve(sb.toString())
@@ -179,7 +189,7 @@ class ReportGridGenerator(
                         inv.recipient.email,
                         inv.vatRate.toString(),
                         inv.vatAmount.toString(),
-                        inv.currency
+                        inv.currency,
                     )
                 }
             }
@@ -189,34 +199,38 @@ class ReportGridGenerator(
         }
     }
 
-    private fun getInvoicesInTimeSlice(): List<InvoiceDTO> {
-        return invoices.filter { timeSlice.periodStart <= it.invoiceDate && timeSlice.periodEnd >= it.invoiceDate }
-    }
+    private fun getInvoicesInTimeSlice(): List<InvoiceDTO> =
+        invoices.filter {
+            timeSlice.periodStart <= it.invoiceDate && timeSlice.periodEnd >= it.invoiceDate
+        }
 
     private fun createChunks(
         source: List<InvoiceDTO>,
-        rowHeight: Int
-    ): List<List<InvoiceDTO>> {
-        return source.chunked(maxHeightAdjusted / rowHeight)
-    }
+        rowHeight: Int,
+    ): List<List<InvoiceDTO>> = source.chunked(maxHeightAdjusted / rowHeight)
 
-    data class Table(val widget: Widget, val height: Int)
+    data class Table(
+        val widget: Widget,
+        val height: Int,
+    )
 
     private fun createTables(chunks: List<List<InvoiceDTO>>): List<Table> {
         val tables = mutableListOf<Table>()
-        val options = mutableListOf(
-            "${th.primary("e)")} Export csv",
-        )
+        val options =
+            mutableListOf(
+                "${th.primary("e)")} Export csv",
+            )
         when (zoomLevel) {
             ZoomLevel.MONTH -> options.add("${th.primary("y)")} Yearly")
             ZoomLevel.YEAR -> options.add("${th.primary("m)")} Monthly")
         }
         options.add("${th.error("q)")} Cancel")
 
-        val periodOptions = arrayOf(
-            th.primary("←) "),
-            th.primary(" →)")
-        )
+        val periodOptions =
+            arrayOf(
+                th.primary("←) "),
+                th.primary(" →)"),
+            )
         if (timeSlice.periodStart <= timeSlice.start) {
             periodOptions[0] = ""
         }
@@ -228,92 +242,99 @@ class ReportGridGenerator(
             val items = chunk.map { it }
 
             var length = 0
-            val pan = Panel(
-                bottomTitle = Text(options.joinToString(separator = th.secondary(" / "))),
-                bottomTitleAlign = TextAlign.RIGHT,
-                borderStyle = th.secondary,
-                content = table {
-                    cellBorders = Borders.BOTTOM_RIGHT
-                    borderType = BorderType.ROUNDED
-                    borderStyle = th.secondary
-                    column(0) {
-                        width = ColumnWidth(1)
-                        align = TextAlign.RIGHT
-                    }
-                    column(1) {
-                        width = ColumnWidth(1)
-                        align = TextAlign.LEFT
-                    }
-                    column(2) {
-                        width = ColumnWidth(1)
-                        align = TextAlign.LEFT
-                    }
-                    column(3) {
-                        width = ColumnWidth(1)
-                        align = TextAlign.LEFT
-                    }
-                    column(4) {
-                        width = ColumnWidth(1)
-                        align = TextAlign.LEFT
-                        cellBorders = Borders.BOTTOM
-                    }
-                    header {
-                        row {
-                            length++
-                            cellBorders = Borders.BOTTOM
-                            val timeExplanation = when (zoomLevel) {
-                                ZoomLevel.YEAR -> "${timeSlice.periodStart.year} Full Year"
-                                ZoomLevel.MONTH -> "${timeSlice.periodStart.year} ${
-                                    timeSlice.periodStart.month.toString().lowercase()
-                                        .replaceFirstChar { it.titlecase(getDefault()) }
-                                }"
+            val pan =
+                Panel(
+                    bottomTitle = Text(options.joinToString(separator = th.secondary(" / "))),
+                    bottomTitleAlign = TextAlign.RIGHT,
+                    borderStyle = th.secondary,
+                    content =
+                        table {
+                            cellBorders = Borders.BOTTOM_RIGHT
+                            borderType = BorderType.ROUNDED
+                            borderStyle = th.secondary
+                            column(0) {
+                                width = ColumnWidth(1)
+                                align = TextAlign.RIGHT
                             }
-                            cell(periodOptions.joinToString(timeExplanation)) {
-                                columnSpan = 4
+                            column(1) {
+                                width = ColumnWidth(1)
                                 align = TextAlign.LEFT
                             }
-                            // This is weird, but it works. Tables.size is technically correct at this point
-                            // in time, since we are filling the list with tables as we go. on the next chunk the
-                            // table.size will grow, and continue to be correct. tableIndex will not work for anything
-                            // here, since the index is 0 while the grids are being created
-                            cell("Page [${tables.size + 1}/${chunks.size}]")
-                        }
-                        row {
-                            length++
-                            cell("Inv id")
-                            cell("Recipient")
-                            cell("Vat")
-                            cell("Total")
-                            cell("Inv Date")
-                        }
-                    }
-                    body {
-                        items.forEach { item ->
-                            row {
-                                length++
-                                cell(item.id)
-                                cell(item.recipient.companyName)
-                                cell(item.vatAmount)
-                                cell(item.total)
-                                cell(item.invoiceDate.format(DateTimeFormatter.ofPattern("d MMM")))
+                            column(2) {
+                                width = ColumnWidth(1)
+                                align = TextAlign.LEFT
                             }
-                        }
-                    }
-                    footer {
-                        row {
-                            length++
-                            cell("Total: $sumTotal - Total Ex. Vat: $sumExVat - Vat: $sumVat") {
-                                columnSpan = 5
-                                cellBorders = Borders.NONE
-                                padding = Padding(0, 0, 1, 0)
+                            column(3) {
+                                width = ColumnWidth(1)
+                                align = TextAlign.LEFT
                             }
-                        }
-                    }
-                }
-            )
+                            column(4) {
+                                width = ColumnWidth(1)
+                                align = TextAlign.LEFT
+                                cellBorders = Borders.BOTTOM
+                            }
+                            header {
+                                row {
+                                    length++
+                                    cellBorders = Borders.BOTTOM
+                                    val timeExplanation =
+                                        when (zoomLevel) {
+                                            ZoomLevel.YEAR -> {
+                                                "${timeSlice.periodStart.year} Full Year"
+                                            }
+
+                                            ZoomLevel.MONTH -> {
+                                                "${timeSlice.periodStart.year} ${
+                                                    timeSlice.periodStart.month.toString().lowercase()
+                                                        .replaceFirstChar { it.titlecase(getDefault()) }
+                                                }"
+                                            }
+                                        }
+                                    cell(periodOptions.joinToString(timeExplanation)) {
+                                        columnSpan = 4
+                                        align = TextAlign.LEFT
+                                    }
+                                    // This is weird, but it works. Tables.size is technically correct at this point
+                                    // in time, since we are filling the list with tables as we go. on the next chunk the
+                                    // table.size will grow, and continue to be correct. tableIndex will not work for anything
+                                    // here, since the index is 0 while the grids are being created
+                                    cell("Page [${tables.size + 1}/${chunks.size}]")
+                                }
+                                row {
+                                    length++
+                                    cell("Inv id")
+                                    cell("Recipient")
+                                    cell("Vat")
+                                    cell("Total")
+                                    cell("Inv Date")
+                                }
+                            }
+                            body {
+                                items.forEach { item ->
+                                    row {
+                                        length++
+                                        cell(item.id)
+                                        cell(item.recipient.companyName)
+                                        cell(item.vatAmount)
+                                        cell(item.total)
+                                        cell(item.invoiceDate.format(DateTimeFormatter.ofPattern("d MMM")))
+                                    }
+                                }
+                            }
+                            footer {
+                                row {
+                                    length++
+                                    cell("Total: $sumTotal - Total Ex. Vat: $sumExVat - Vat: $sumVat") {
+                                        columnSpan = 5
+                                        cellBorders = Borders.NONE
+                                        padding = Padding(0, 0, 1, 0)
+                                    }
+                                }
+                            }
+                        },
+                )
             length *= ROW_HEIGHT
             tables.add(Table(pan, length))
-
         }
         return tables
     }
@@ -323,16 +344,16 @@ class ReportGridGenerator(
     }
 }
 
-
-class ReportManager(private val writer: Writer, private val reader: InputReader) {
-
-    suspend fun getAllInvoices(): List<InvoiceDTO> {
-        return writer.withLoading(
+class ReportManager(
+    private val writer: Writer,
+    private val reader: InputReader,
+) {
+    suspend fun getAllInvoices(): List<InvoiceDTO> =
+        writer.withLoading(
             {
                 Repository.findAllInvoices(filter = "paid")
-            }
+            },
         )
-    }
 
     suspend fun mainMenu() {
         // these are ordered by dueDate further upstream
@@ -353,14 +374,16 @@ class ReportManager(private val writer: Writer, private val reader: InputReader)
                     "y" to { generator.zoomToYear() },
                     "m" to { generator.zoomToMonth() },
                     "e" to {
-                        val outcome = writer.withLoading({
-                            generator.exportToCSV()
-                        })
+                        val outcome =
+                            writer.withLoading({
+                                generator.exportToCSV()
+                            })
                         MordantScene(writer).apply {
-                            val msg = when (outcome) {
-                                is Outcome.Success -> "Exported to ${outcome.value}"
-                                is Outcome.Error -> outcome.message
-                            }
+                            val msg =
+                                when (outcome) {
+                                    is Outcome.Success -> "Exported to ${outcome.value}"
+                                    is Outcome.Error -> outcome.message
+                                }
                             addRow(msg)
                             display()
                         }
@@ -374,7 +397,7 @@ class ReportManager(private val writer: Writer, private val reader: InputReader)
                     "j" to { generator.scrollDown() },
                     "ArrowUp" to { generator.scrollUp() },
                     "k" to { generator.scrollUp() },
-                    "q" to { exit() }
+                    "q" to { exit() },
                 )
 
             val table = generator.table

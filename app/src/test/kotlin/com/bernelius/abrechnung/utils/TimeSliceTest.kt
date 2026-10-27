@@ -65,130 +65,141 @@ class TimeSliceTest {
 
     @Test
     fun `prevPeriod in MONTH zoom decrements month`() {
-        val period = TimeSlice(
-            start = start,
-            end = end,
-            currentSlice = LocalDate.of(2023, 5, 1),
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = start,
+                end = end,
+                currentSlice = LocalDate.of(2023, 5, 1),
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.prevPeriod()
         assertEquals(LocalDate.of(2023, 4, 1), period.currentSlice)
     }
 
     @Test
     fun `prevPeriod in MONTH zoom crosses year boundary`() {
-        val period = TimeSlice(
-            start = start,
-            end = end,
-            currentSlice = LocalDate.of(2023, 1, 1),
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = start,
+                end = end,
+                currentSlice = LocalDate.of(2023, 1, 1),
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.prevPeriod()
         assertEquals(LocalDate.of(2022, 12, 1), period.currentSlice)
     }
 
     @Test
     fun `nextPeriod in MONTH zoom increments month`() {
-        val period = TimeSlice(
-            start = start,
-            end = end,
-            currentSlice = LocalDate.of(2023, 5, 1),
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = start,
+                end = end,
+                currentSlice = LocalDate.of(2023, 5, 1),
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.nextPeriod()
         assertEquals(LocalDate.of(2023, 6, 1), period.currentSlice)
     }
 
     @Test
     fun `nextPeriod in MONTH zoom crosses year boundary`() {
-        val period = TimeSlice(
-            start = start,
-            end = end,
-            currentSlice = LocalDate.of(2023, 12, 1),
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = start,
+                end = end,
+                currentSlice = LocalDate.of(2023, 12, 1),
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.nextPeriod()
         assertEquals(LocalDate.of(2024, 1, 1), period.currentSlice)
     }
 
     @Test
     fun `prevPeriod in MONTH zoom does not decrement when at lower bound`() {
-        val period = TimeSlice(
-            start = start,
-            end = end,
-            currentSlice = start,
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = start,
+                end = end,
+                currentSlice = start,
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.prevPeriod()
         assertEquals(start, period.currentSlice)
     }
 
     @Test
     fun `nextPeriod in MONTH zoom does not increment when at upper bound`() {
-        val period = TimeSlice(
-            start = start,
-            end = end,
-            currentSlice = end,
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = start,
+                end = end,
+                currentSlice = end,
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.nextPeriod()
         assertEquals(end, period.currentSlice)
     }
 
     @Test
     fun `prevPeriod in MONTH zoom stops at start when crossing would undershoot`() {
-        val period = TimeSlice(
-            start = LocalDate.of(2020, 6, 15),
-            end = end,
-            currentSlice = LocalDate.of(2020, 7, 15),
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = LocalDate.of(2020, 6, 15),
+                end = end,
+                currentSlice = LocalDate.of(2020, 7, 15),
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.prevPeriod()
         assertEquals(LocalDate.of(2020, 6, 15), period.currentSlice)
     }
 
     @Test
     fun `nextPeriod in MONTH zoom stops at end when crossing would overshoot`() {
-        val period = TimeSlice(
-            start = start,
-            end = LocalDate.of(2025, 6, 15),
-            currentSlice = LocalDate.of(2025, 5, 15),
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = start,
+                end = LocalDate.of(2025, 6, 15),
+                currentSlice = LocalDate.of(2025, 5, 15),
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.nextPeriod()
         assertEquals(LocalDate.of(2025, 6, 15), period.currentSlice)
     }
 
     @Test
     fun `prevPeriod in YEAR zoom clamps to start for partial year lower bound`() {
-        val period = TimeSlice(
-            start = LocalDate.of(2020, 6, 15),
-            end = end,
-            currentSlice = LocalDate.of(2021, 3, 10)
-        )
+        val period =
+            TimeSlice(
+                start = LocalDate.of(2020, 6, 15),
+                end = end,
+                currentSlice = LocalDate.of(2021, 3, 10),
+            )
         period.prevPeriod()
         assertEquals(LocalDate.of(2020, 6, 15), period.currentSlice)
     }
 
     @Test
     fun `nextPeriod in YEAR zoom clamps to end for partial year upper bound`() {
-        val period = TimeSlice(
-            start = start,
-            end = LocalDate.of(2025, 6, 15),
-            currentSlice = LocalDate.of(2024, 9, 10)
-        )
+        val period =
+            TimeSlice(
+                start = start,
+                end = LocalDate.of(2025, 6, 15),
+                currentSlice = LocalDate.of(2024, 9, 10),
+            )
         period.nextPeriod()
         assertEquals(LocalDate.of(2025, 6, 15), period.currentSlice)
     }
 
     @Test
     fun `prevPeriod in MONTH zoom clamps to start across end of month mismatch`() {
-        val period = TimeSlice(
-            start = LocalDate.of(2020, 1, 31),
-            end = end,
-            currentSlice = LocalDate.of(2020, 3, 31),
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = LocalDate.of(2020, 1, 31),
+                end = end,
+                currentSlice = LocalDate.of(2020, 3, 31),
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.prevPeriod()
         assertEquals(LocalDate.of(2020, 2, 29), period.currentSlice)
         period.prevPeriod()
@@ -208,11 +219,12 @@ class TimeSliceTest {
     @Test
     fun `start equals end is a no-op in MONTH zoom`() {
         val single = LocalDate.of(2023, 6, 15)
-        val period = TimeSlice(
-            start = single,
-            end = single,
-            zoomLevel = TimeSlice.ZoomLevel.MONTH
-        )
+        val period =
+            TimeSlice(
+                start = single,
+                end = single,
+                zoomLevel = TimeSlice.ZoomLevel.MONTH,
+            )
         period.prevPeriod()
         assertEquals(single, period.currentSlice)
         period.nextPeriod()
@@ -232,7 +244,7 @@ class TimeSliceTest {
             TimeSlice(
                 start = start,
                 end = end,
-                currentSlice = LocalDate.of(2019, 6, 15)
+                currentSlice = LocalDate.of(2019, 6, 15),
             )
         }
     }
@@ -243,7 +255,7 @@ class TimeSliceTest {
             TimeSlice(
                 start = start,
                 end = end,
-                currentSlice = LocalDate.of(2026, 6, 15)
+                currentSlice = LocalDate.of(2026, 6, 15),
             )
         }
     }

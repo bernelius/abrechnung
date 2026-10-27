@@ -2,7 +2,6 @@ package com.bernelius.abrechnung.utils
 
 import java.time.LocalDate
 
-
 internal class TimeSlice(
     val start: LocalDate,
     val end: LocalDate,
@@ -10,15 +9,17 @@ internal class TimeSlice(
     var zoomLevel: ZoomLevel = ZoomLevel.YEAR,
 ) {
     val periodStart: LocalDate
-        get() = when (zoomLevel) {
-            ZoomLevel.YEAR -> LocalDate.of(currentSlice.year, 1, 1)
-            ZoomLevel.MONTH -> currentSlice.withDayOfMonth(1)
-        }
+        get() =
+            when (zoomLevel) {
+                ZoomLevel.YEAR -> LocalDate.of(currentSlice.year, 1, 1)
+                ZoomLevel.MONTH -> currentSlice.withDayOfMonth(1)
+            }
     val periodEnd: LocalDate
-        get() = when (zoomLevel) {
-            ZoomLevel.YEAR -> LocalDate.of(currentSlice.year, 12, 31)
-            ZoomLevel.MONTH -> currentSlice.withDayOfMonth(currentSlice.lengthOfMonth())
-        }
+        get() =
+            when (zoomLevel) {
+                ZoomLevel.YEAR -> LocalDate.of(currentSlice.year, 12, 31)
+                ZoomLevel.MONTH -> currentSlice.withDayOfMonth(currentSlice.lengthOfMonth())
+            }
 
     init {
         require(start <= end)
@@ -26,7 +27,8 @@ internal class TimeSlice(
     }
 
     enum class ZoomLevel {
-        YEAR, MONTH
+        YEAR,
+        MONTH,
     }
 
     fun zoomToMonth() {
@@ -53,26 +55,37 @@ internal class TimeSlice(
 
     private fun decrementMonth() {
         val newSlice = currentSlice.minusMonths(1)
-        if (newSlice < start) currentSlice = start
-        else currentSlice = newSlice
+        if (newSlice < start) {
+            currentSlice = start
+        } else {
+            currentSlice = newSlice
+        }
     }
 
     private fun incrementMonth() {
         val newSlice = currentSlice.plusMonths(1)
-        if (newSlice > end) currentSlice = end
-        else currentSlice = newSlice
+        if (newSlice > end) {
+            currentSlice = end
+        } else {
+            currentSlice = newSlice
+        }
     }
 
     private fun decrementYear() {
         val newSlice = currentSlice.minusYears(1)
-        if (newSlice < start) currentSlice = start
-        else currentSlice = newSlice
+        if (newSlice < start) {
+            currentSlice = start
+        } else {
+            currentSlice = newSlice
+        }
     }
 
     private fun incrementYear() {
         val newSlice = currentSlice.plusYears(1)
-        if (newSlice > end) currentSlice = end
-        else currentSlice = newSlice
+        if (newSlice > end) {
+            currentSlice = end
+        } else {
+            currentSlice = newSlice
+        }
     }
 }
-

@@ -24,7 +24,9 @@ abstract class ControlFlowSignal : Exception() {
 }
 
 /** Signals that the application should terminate with the given [exitCode]. */
-class ProgramExitSignal(val exitCode: Int = 0) : ControlFlowSignal()
+class ProgramExitSignal(
+    val exitCode: Int = 0,
+) : ControlFlowSignal()
 
 /** Signals that the current scene or input operation should be exited (e.g., user pressed Ctrl+C). */
 class ExitSignal : ControlFlowSignal()

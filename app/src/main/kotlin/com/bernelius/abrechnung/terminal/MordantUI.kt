@@ -76,6 +76,7 @@ interface InputReader {
     ): String
 
     fun getKeyIn(allowed: Set<String>): String
+
     fun getKeyIn(vararg allowed: String): String
 
     fun waitForEnter()
@@ -291,7 +292,8 @@ class MordantUI(
 
     override fun getKeyIn(allowed: Set<String>) =
         runBlocking {
-            t.receiveKeyEventsFlow()
+            t
+                .receiveKeyEventsFlow()
                 .mapNotNull { event ->
                     if (event.isCtrlC) {
                         throw ExitSignal()

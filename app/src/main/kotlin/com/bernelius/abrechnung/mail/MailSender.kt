@@ -78,14 +78,15 @@ fun sendMail(
         Transport.send(message)
         return Outcome.Success("Mail sent to ${recipient.email}.")
     } catch (e: Exception) {
-    val isTimeout = generateSequence(e as Throwable?) { it.cause }
-        .any { it is SocketTimeoutException }
+        val isTimeout =
+            generateSequence(e as Throwable?) { it.cause }
+                .any { it is SocketTimeoutException }
 
-    return Outcome.Error(
-        when {
-            isTimeout -> "Connection timeout"
-            else -> e.message ?: "Unknown error"
-        }
-    )
-}
+        return Outcome.Error(
+            when {
+                isTimeout -> "Connection timeout"
+                else -> e.message ?: "Unknown error"
+            },
+        )
+    }
 }
