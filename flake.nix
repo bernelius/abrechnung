@@ -66,7 +66,7 @@
 
             outputHashAlgo = "sha256";
             outputHashMode = "recursive";
-            outputHash = "sha256-BR2z9bQ3dpazH8WxDaWprIDdx2TnEXvAT3TBqF+k/u4=";
+            outputHash = "sha256-JnZZL2R5QNTPtiNyS1vfq7daa26LpHLO9QvPKdxfPUo=";
           };
 
           abrechnung = pkgs.stdenv.mkDerivation {
