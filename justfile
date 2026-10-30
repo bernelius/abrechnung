@@ -63,3 +63,6 @@ format:
 
 report:
     ./gradlew koverHtmlReport
+
+bump-mitm:
+    nix run .#packages.x86_64-linux.abrechnung.mitmCache.updateScript
