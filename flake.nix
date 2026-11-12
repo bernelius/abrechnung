@@ -72,6 +72,7 @@
                 $out/bin/abrechnung
 
               wrapProgram $out/bin/abrechnung \
+                --set JAVA_HOME ${jdk} \
                 --prefix LD_LIBRARY_PATH : ${
                   lib.makeLibraryPath [
                     pkgs.libpulseaudio

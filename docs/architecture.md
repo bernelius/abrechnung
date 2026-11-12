@@ -321,6 +321,12 @@ The `Repository` object is a singleton that provides all data access operations:
 - Enter the shell with `devenv shell` or via direnv (`.envrc` contains `use devenv`)
 - `devenv.lock` pins the resolved inputs (generated, committed)
 
+**Nix Package:**
+
+- `flake.nix` builds the Gradle `installDist` distribution and wraps its generated launcher
+- The runtime wrapper sets `JAVA_HOME` to the same Temurin JDK used for the build, so Java does not need to be installed on the user's `PATH`
+- The wrapper also prefixes `LD_LIBRARY_PATH` with the PulseAudio, ALSA, and GCC runtime libraries
+
 **Version Management:**
 
 - The canonical version is stored in a plain `VERSION` file at the repository root (e.g., `0.1.3`)
